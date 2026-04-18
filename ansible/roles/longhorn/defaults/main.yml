@@ -1,0 +1,16 @@
+---
+# Longhorn 분산 블록 스토리지 설치 기본값.
+# 3노드 각 500GB qcow2 위에서 replica 3 으로 배치.
+
+longhorn_chart_version: "1.7.2"
+longhorn_namespace: longhorn-system
+longhorn_release_name: longhorn
+
+# 노드별 기본 볼륨 저장 경로
+longhorn_default_data_path: /var/lib/longhorn
+
+# 단일 PVC 의 기본 replica 개수
+longhorn_default_replica_count: 3
+
+# longhorn StorageClass 를 클러스터 기본 SC 로 설정
+longhorn_make_default_storage_class: true

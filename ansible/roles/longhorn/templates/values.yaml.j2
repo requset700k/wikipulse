@@ -1,0 +1,33 @@
+{# Longhorn Helm values #}
+defaultSettings:
+  defaultDataPath: {{ longhorn_default_data_path }}
+  defaultReplicaCount: {{ longhorn_default_replica_count }}
+  # 단일 호스트 장애 시 자동 재배치 대기 시간(분). 기본 30분은 개발환경에 과함.
+  replicaReplenishmentWaitInterval: 10
+  # v2 엔진(experimental) 비활성 — v1 안정 엔진만 사용
+  v2DataEngine: false
+
+persistence:
+  # longhorn StorageClass 를 클러스터 기본 SC 로 만듦
+  defaultClass: {{ longhorn_make_default_storage_class | ternary("true", "false") }}
+  defaultClassReplicaCount: {{ longhorn_default_replica_count }}
+  reclaimPolicy: Retain
+
+# manager/UI 파드 리소스 — 32GB 노드 기준 보수적
+longhornManager:
+  priorityClass: null
+
+longhornUI:
+  replicas: 2
+
+# CSI 플러그인 기본값 사용
+csi:
+  attacherReplicaCount: 2
+  provisionerReplicaCount: 2
+  resizerReplicaCount: 2
+  snapshotterReplicaCount: 2
+
+# metrics 는 Phase 5 관측성에서 ServiceMonitor 활성화
+metrics:
+  serviceMonitor:
+    enabled: false

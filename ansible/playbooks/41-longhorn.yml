@@ -1,0 +1,20 @@
+---
+# Phase 4b: Longhorn 분산 블록 스토리지 설치
+# 실행: make longhorn-up
+# 전제: make metallb-up 완료 (UI 접근용 LB IP 발급 가능)
+
+- name: Longhorn 노드 사전 준비 (open-iscsi, nfs-common)
+  hosts: control_plane
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: longhorn_prereq
+
+- name: Longhorn 설치
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: longhorn

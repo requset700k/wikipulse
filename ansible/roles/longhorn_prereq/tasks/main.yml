@@ -1,0 +1,25 @@
+---
+# Longhorn 은 모든 노드에 open-iscsi + nfs-common 이 필요.
+# - open-iscsi: Longhorn 볼륨을 iSCSI target 으로 attach.
+# - nfs-common: Longhorn RWX 볼륨이 내부적으로 NFS export 로 구현됨.
+
+- name: Longhorn 필수 패키지 설치 (open-iscsi, nfs-common)
+  ansible.builtin.apt:
+    name:
+      - open-iscsi
+      - nfs-common
+    state: present
+    update_cache: true
+
+- name: iscsid 서비스 활성화 및 시작
+  ansible.builtin.systemd:
+    name: iscsid
+    enabled: true
+    state: started
+
+- name: multipathd 비활성화 (Longhorn iSCSI 와 충돌)
+  ansible.builtin.systemd:
+    name: multipathd
+    enabled: false
+    state: stopped
+  failed_when: false   # 설치돼있지 않으면 무시
