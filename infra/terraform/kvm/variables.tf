@@ -57,10 +57,10 @@ variable "nodes" {
   }))
 
   # 호스트 실측: AMD Ryzen 9 7950X (16C/32T), 128GB, 1.8TB NVMe (1.7TB free). 이 프로젝트 전용.
-  # 합계: 48 vCPU (32논리코어 대비 1.5x, Zen4 SMT 효율↑) / 120 GB(1:1, 오버커밋 無) / 1.5 TB(thin)
+  # 합계: 48 vCPU (32논리코어 대비 1.5x, Zen4 SMT 효율↑) / 96 GB(1:1, 호스트 여유 32GB) / 1.5 TB(thin)
   default = {
-    cp01 = { role = "control-plane", ip = "10.10.0.11/24", cpu = 16, memory = 40960, disk_gb = 500 }
-    cp02 = { role = "control-plane", ip = "10.10.0.12/24", cpu = 16, memory = 40960, disk_gb = 500 }
-    cp03 = { role = "control-plane", ip = "10.10.0.13/24", cpu = 16, memory = 40960, disk_gb = 500 }
+    cp01 = { role = "control-plane", ip = "10.10.0.11/24", cpu = 16, memory = 32768, disk_gb = 500 }
+    cp02 = { role = "control-plane", ip = "10.10.0.12/24", cpu = 16, memory = 32768, disk_gb = 500 }
+    cp03 = { role = "control-plane", ip = "10.10.0.13/24", cpu = 16, memory = 32768, disk_gb = 500 }
   }
 }
