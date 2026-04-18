@@ -74,14 +74,23 @@
     state: present
     update_cache: true
 
-- name: containerd 기본 config.toml 생성
+- name: containerd /etc/containerd 디렉토리
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: "0755"
+
+# docker.io containerd.io 패키지 기본 config 는 disabled_plugins=["cri"] 이므로
+# 항상 `containerd config default` 출력으로 덮어쓴다.
+- name: containerd config.toml 기본값으로 재생성 (CRI 플러그인 활성화)
   ansible.builtin.shell: |
-    set -e
-    mkdir -p /etc/containerd
-    containerd config default > /etc/containerd/config.toml
+    set -euo pipefail
+    containerd config default > /etc/containerd/config.toml.new
+    mv /etc/containerd/config.toml.new /etc/containerd/config.toml
   args:
     executable: /bin/bash
-    creates: /etc/containerd/config.toml
+  changed_when: true
+  notify: restart-containerd
 
 - name: containerd SystemdCgroup=true 로 전환
   ansible.builtin.replace:
