@@ -1,0 +1,91 @@
+---
+# Tailscale subnet router 설치 + subnet route 광고.
+# 실행: ansible-playbook -i inventory.yml playbooks/50-tailscale.yml
+#        -e tailscale_authkey=tskey-auth-...    # 최초 1회만 필요
+
+- name: authkey 제공되었는지(최초 설치) 여부 확인
+  ansible.builtin.set_fact:
+    tailscale_need_login: "{{ tailscale_authkey | length > 0 }}"
+
+- name: Tailscale APT GPG 키 다운로드
+  ansible.builtin.get_url:
+    url: https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_distribution_release }}.noarmor.gpg
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    mode: "0644"
+    force: false
+
+- name: Tailscale APT 저장소 등록
+  ansible.builtin.get_url:
+    url: https://pkgs.tailscale.com/stable/ubuntu/{{ ansible_distribution_release }}.tailscale-keyring.list
+    dest: /etc/apt/sources.list.d/tailscale.list
+    mode: "0644"
+    force: false
+
+- name: tailscale 패키지 설치
+  ansible.builtin.apt:
+    name: tailscale
+    state: present
+    update_cache: true
+
+- name: tailscaled 서비스 활성화 및 시작
+  ansible.builtin.systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+# IP forwarding 은 libvirt_host 역할에서 이미 활성화됨 (net.ipv4.ip_forward=1).
+# 혹시 누락된 환경 대비해서 재확인.
+- name: IPv4 forwarding 활성화 (subnet router 필수)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-tailscale.conf
+
+- name: 현재 tailscale 상태 조회
+  ansible.builtin.command: tailscale status --json
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+
+- name: 이미 로그인되어 있는지 판정
+  ansible.builtin.set_fact:
+    tailscale_logged_in: >-
+      {{ (tailscale_status.rc == 0)
+         and (tailscale_status.stdout | from_json | json_query('Self.Online') | default(false)) }}
+
+- name: tailscale up (authkey 사용, 최초 로그인)
+  ansible.builtin.command: >-
+    tailscale up
+    --authkey={{ tailscale_authkey }}
+    --hostname={{ tailscale_hostname }}
+    --advertise-routes={{ tailscale_advertised_routes | join(',') }}
+    --accept-dns={{ tailscale_accept_dns | ternary('true', 'false') }}
+    --accept-routes={{ tailscale_accept_routes | ternary('true', 'false') }}
+    --reset
+  when:
+    - tailscale_need_login | bool
+    - not tailscale_logged_in | bool
+  no_log: true     # authkey 노출 방지
+  changed_when: true
+
+- name: tailscale set (이미 로그인 상태 — hostname/광고 라우트 갱신)
+  ansible.builtin.command: >-
+    tailscale set
+    --hostname={{ tailscale_hostname }}
+    --advertise-routes={{ tailscale_advertised_routes | join(',') }}
+    --accept-dns={{ tailscale_accept_dns | ternary('true', 'false') }}
+    --accept-routes={{ tailscale_accept_routes | ternary('true', 'false') }}
+  when:
+    - tailscale_logged_in | bool
+  changed_when: true
+
+- name: 최종 상태 출력 (MagicDNS 이름 + tailnet IP)
+  ansible.builtin.command: tailscale status --self --peers=false
+  register: tailscale_final
+  changed_when: false
+
+- name: 결과 표시
+  ansible.builtin.debug:
+    msg: "{{ tailscale_final.stdout_lines }}"

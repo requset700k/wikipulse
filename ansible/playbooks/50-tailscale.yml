@@ -1,0 +1,12 @@
+---
+# Phase 5: Tailscale subnet router 설치 + 10.10.0.0/24 광고
+# 실행: make tailscale-up AUTHKEY=tskey-auth-...     # 최초 로그인시 필요
+#       make tailscale-up                             # 이미 로그인된 상태 — 광고 라우트만 갱신
+
+- name: Tailscale subnet router 설치 (hv01)
+  hosts: host
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: tailscale_host
