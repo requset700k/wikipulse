@@ -1,0 +1,22 @@
+---
+# kube-vip static pod 매니페스트 배치.
+# kubeadm v1.29+ RBAC 이슈로 admin.conf 사용 시 'User kubernetes-admin cannot get leases' 오류.
+# - 첫 번째 CP: super-admin.conf 사용 (kubeadm init 이 생성, system:masters 그룹이라 부트스트랩 중에도 RBAC 통과)
+# - 나머지 CP: kubeadm join 후 admin.conf 사용 (이 시점엔 cluster-admins 바인딩이 완성됨)
+
+- name: /etc/kubernetes/manifests 디렉토리 보장
+  ansible.builtin.file:
+    path: /etc/kubernetes/manifests
+    state: directory
+    mode: "0755"
+
+- name: kube-vip static pod 매니페스트 배치
+  ansible.builtin.template:
+    src: kube-vip.yaml.j2
+    dest: /etc/kubernetes/manifests/kube-vip.yaml
+    mode: "0644"
+  vars:
+    kubeconfig_host_path: >-
+      {{ '/etc/kubernetes/super-admin.conf'
+         if inventory_hostname == groups.control_plane[0]
+         else '/etc/kubernetes/admin.conf' }}

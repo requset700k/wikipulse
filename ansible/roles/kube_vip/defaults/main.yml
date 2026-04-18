@@ -1,0 +1,5 @@
+---
+kube_vip_version: v0.8.7
+kube_vip_interface: eth0
+control_plane_vip: 10.10.0.10
+control_plane_port: 6443
