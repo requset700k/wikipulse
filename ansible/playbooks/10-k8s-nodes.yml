@@ -1,0 +1,11 @@
+---
+# Phase 2-A: KVM VM에 containerd + kubeadm/kubelet/kubectl 사전 설치
+# 실행: make vm-prep   (Terraform으로 VM이 올라와 있어야 함)
+
+- name: K8s 노드 사전 준비(containerd, kubeadm 바이너리, sysctl)
+  hosts: k8s_nodes
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: k8s_node

@@ -1,0 +1,54 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+crash.*.log
+
+# Ansible
+*.retry
+ansible/inventory.yml
+ansible/.vault_pass
+ansible/group_vars/**/vault.yml
+
+# Kubeconfig / 비밀정보
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+**/secrets/
+*.pem
+*.key
+!**/cloud-init/*.key
+*.pfx
+*.p12
+
+# OS / 에디터
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+
+# 로컬 임시
+/tmp/
+scratch/
+
+# 도구 로컬 상태 / 로컬 계획서
+.omc/
+wikipulse-project-plan-final.docx
+*.out

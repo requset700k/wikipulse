@@ -1,0 +1,26 @@
+# cp inventory.yml.example inventory.yml 후 값 채워넣기
+# Phase 1 단계: `host` 그룹(베어메탈) 만 채우면 됨.
+# Phase 2 이후: `k8s_nodes` 그룹(Terraform이 생성한 VM IP)을 채움.
+
+all:
+  vars:
+    ansible_user: ubuntu
+    ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+    ansible_python_interpreter: /usr/bin/python3
+
+  children:
+    # 베어메탈 하이퍼바이저 호스트 (libvirt 설치 대상)
+    host:
+      hosts:
+        hv01:
+          ansible_host: 192.0.2.1       # TODO: 본인 서버 IP로 교체
+
+    # kubeadm으로 묶을 KVM 게스트
+    k8s_nodes:
+      children:
+        control_plane:
+          hosts:
+            cp01: { ansible_host: 10.10.0.11 }
+            cp02: { ansible_host: 10.10.0.12 }
+            cp03: { ansible_host: 10.10.0.13 }
+        # 이 프로젝트는 cp 노드를 워커로 겸용(taint 해제). 별도 워커 필요 시 아래에 추가.

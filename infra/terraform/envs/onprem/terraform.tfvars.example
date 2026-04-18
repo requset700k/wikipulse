@@ -1,0 +1,10 @@
+# cp terraform.tfvars.example terraform.tfvars 후 실제 값으로 교체.
+
+# 원격 하이퍼바이저로 쏘는 경우:
+#   libvirt_uri = "qemu+ssh://ubuntu@192.168.0.50/system"
+# 하이퍼바이저 위에서 직접 실행하는 경우:
+#   libvirt_uri = "qemu:///system"
+libvirt_uri = "qemu+ssh://ubuntu@CHANGEME_HOST_IP/system"
+
+# 본인 SSH 공개키 한 줄 ( ssh-ed25519 AAAA... user@host )
+ssh_authorized_key = "ssh-ed25519 AAAA... user@laptop"

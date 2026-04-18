@@ -1,0 +1,45 @@
+---
+# wpbr0 이라는 NAT 기반 libvirt 네트워크 생성.
+# DHCP 는 끄고 Terraform이 cloud-init 으로 고정 IP를 주입한다.
+
+- name: wpbr0 네트워크 정의 XML 생성
+  ansible.builtin.copy:
+    dest: /tmp/wpbr0-net.xml
+    mode: "0644"
+    content: |
+      <network>
+        <name>{{ wpbr_name }}</name>
+        <forward mode='nat'/>
+        <bridge name='{{ wpbr_name }}' stp='on' delay='0'/>
+        <ip address='{{ wpbr_gateway }}' netmask='255.255.255.0'>
+          <!-- DHCP 비활성: Terraform/cloud-init 으로 고정 IP 주입 -->
+        </ip>
+      </network>
+
+- name: 기존 wpbr0 네트워크 여부 확인
+  ansible.builtin.command: virsh net-info {{ wpbr_name }}
+  register: wpbr_info
+  changed_when: false
+  failed_when: false
+
+- name: wpbr0 네트워크 정의
+  ansible.builtin.command: virsh net-define /tmp/wpbr0-net.xml
+  when: wpbr_info.rc != 0
+
+- name: wpbr0 자동 시작 + 활성화
+  ansible.builtin.shell: |
+    set -e
+    virsh net-autostart {{ wpbr_name }} || true
+    virsh net-start     {{ wpbr_name }} || true
+  args:
+    executable: /bin/bash
+  register: net_start
+  changed_when: "'started' in net_start.stdout or 'marked as autostarted' in net_start.stdout"
+
+- name: IP 포워딩 활성화(지속)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true

@@ -1,0 +1,48 @@
+#cloud-config
+hostname: ${hostname}
+fqdn: ${fqdn}
+manage_etc_hosts: true
+
+users:
+  - name: ubuntu
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_authorized_key}
+
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+package_upgrade: false
+packages:
+  - qemu-guest-agent
+  - htop
+  - jq
+  - tmux
+  - net-tools
+  - dnsutils
+  - chrony
+
+timezone: Asia/Seoul
+
+runcmd:
+  - systemctl enable --now qemu-guest-agent
+  - systemctl enable --now chrony
+  # 커널 파라미터: kubeadm 사전 요건 (상세 세팅은 Ansible이 처리)
+  - modprobe overlay
+  - modprobe br_netfilter
+  - swapoff -a
+  - sed -ri 's/^([^#].*\sswap\s.*)$/# \1/' /etc/fstab
+
+write_files:
+  - path: /etc/motd
+    permissions: "0644"
+    content: |
+      ─────────────────────────────────────────────
+        WikiPulse K8s node — ${hostname}
+        Managed by Terraform + Ansible (kubeadm v1.31)
+      ─────────────────────────────────────────────
+
+final_message: "cloud-init 완료. SSH 접속 가능."

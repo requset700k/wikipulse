@@ -1,0 +1,50 @@
+---
+- name: libvirt/KVM 관련 패키지 설치
+  ansible.builtin.apt:
+    name:
+      - qemu-kvm
+      - libvirt-daemon-system
+      - libvirt-clients
+      - bridge-utils
+      - virtinst
+      - cpu-checker
+      - genisoimage
+      - dnsmasq-utils
+      - python3-libvirt
+      - python3-lxml
+    state: present
+    update_cache: true
+
+- name: libvirtd 서비스 활성화
+  ansible.builtin.systemd:
+    name: libvirtd
+    enabled: true
+    state: started
+
+- name: ansible_user 를 libvirt, kvm 그룹에 추가
+  ansible.builtin.user:
+    name: "{{ ansible_user }}"
+    groups: libvirt,kvm
+    append: true
+
+- name: 이미지/베이스 디렉토리 준비
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: libvirt-qemu
+    group: kvm
+    mode: "0775"
+  loop:
+    - /var/lib/libvirt/images
+    - /var/lib/libvirt/images/wikipulse
+
+# dmacvicar/libvirt provider가 qcow2 backing chain 을 XML 에 명시하지 않아
+# virt-aa-helper 가 base qcow2 를 AppArmor 프로파일에 못 넣어 VM 시작 실패.
+# 이 호스트는 프로젝트 전용이므로 security_driver 를 비활성화해 우회.
+- name: qemu.conf security_driver 비활성화
+  ansible.builtin.lineinfile:
+    path: /etc/libvirt/qemu.conf
+    regexp: '^#?\s*security_driver\s*='
+    line: 'security_driver = "none"'
+    state: present
+  notify: restart-libvirtd
