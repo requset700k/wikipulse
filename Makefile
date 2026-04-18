@@ -44,10 +44,16 @@ k8s-bootstrap: ## kube-vip + kubeadm HA 컨트롤플레인 부트스트랩
 cilium-up: ## Cilium CNI 설치 (kube-proxy replacement)
 	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/30-cilium.yml
 
-platform-up: cilium-up ## Cilium → MetalLB → Longhorn 순차 설치
+metallb-up: ## MetalLB L2 LoadBalancer 설치
+	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/40-metallb.yml
+
+longhorn-up: ## Longhorn 분산 블록 스토리지 설치
+	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/41-longhorn.yml
+
+platform-up: cilium-up metallb-up longhorn-up ## Cilium → MetalLB → Longhorn 순차 설치
 
 # ────── Phase 6: GitOps ──────
 gitops-up: ## ArgoCD 설치 + 루트 App-of-Apps 적용
 	bash $(GITOPS_DIR)/argocd/install.sh
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up platform-up gitops-up
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up metallb-up longhorn-up platform-up gitops-up
