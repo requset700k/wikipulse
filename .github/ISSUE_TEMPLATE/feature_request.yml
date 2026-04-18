@@ -1,0 +1,60 @@
+name: ✨ 기능 제안
+description: 새 기능 또는 개선을 제안합니다.
+title: "feat: <짧은 요약>"
+labels: ["type:feature", "triage"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영역
+      multiple: true
+      options:
+        - infra
+        - security
+        - observability
+        - data
+        - ai
+        - service
+        - ci/cd
+        - docs
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 해결하려는 문제
+      description: 누가, 언제, 왜 불편한가.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안 설계 / 대안
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 수락 기준 (Acceptance Criteria)
+      placeholder: |
+        - [ ] 이슈 감지 지연 < 60s SLO 유지
+        - [ ] Kafka 토픽 스키마 하위호환
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 영향 / 비용 / 리스크
+      description: 예산·온프렘 리소스·DR·보안 영향을 기술
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 우선순위
+      options: ["P0 - Now", "P1 - Next sprint", "P2 - Backlog"]
+    validations:
+      required: true

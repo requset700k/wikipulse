@@ -1,0 +1,99 @@
+# 라벨 정의 - GitHub에 동기화되는 단일 진실 소스
+# 동기화: .github/workflows/labels-sync.yml 가 main 푸시 시 자동 적용
+
+# ── 유형 (무엇)
+- name: "type:bug"
+  color: "d73a4a"
+  description: 결함 / 예상과 다른 동작
+- name: "type:feature"
+  color: "1f883d"
+  description: 새 기능
+- name: "type:refactor"
+  color: "c5def5"
+  description: 동작 변경 없는 구조 개선
+- name: "type:docs"
+  color: "0075ca"
+  description: 문서
+- name: "type:chore"
+  color: "cfd3d7"
+  description: 빌드·릴리스·의존성·CI
+- name: "type:incident"
+  color: "b60205"
+  description: 운영 장애 / 사후 기록
+- name: "type:security"
+  color: "ee0701"
+  description: 보안 이슈 / 공개 가능 건
+- name: "type:question"
+  color: "d876e3"
+  description: 질문 / 토론
+
+# ── 영역 (어디)
+- name: "area:infra"
+  color: "5319e7"
+  description: K8s / Terraform / Ansible / ArgoCD / Helm
+- name: "area:security"
+  color: "e99695"
+  description: Keycloak / Vault / Falco / Kyverno / WAF / SIEM
+- name: "area:observability"
+  color: "fbca04"
+  description: Prometheus / Grafana / Loki / Tempo / OTel / SLO
+- name: "area:data"
+  color: "006b75"
+  description: Kafka / Airflow / dbt / DuckDB / MinIO / DataHub
+- name: "area:ai"
+  color: "8250df"
+  description: NLP / LLM / 임베딩 / 클러스터링
+- name: "area:service"
+  color: "0e8a16"
+  description: FastAPI / Next.js / Kong / Redis / Lambda
+- name: "area:ci"
+  color: "ededed"
+  description: GitHub Actions / pre-commit / lint / release
+- name: "area:dr"
+  color: "ff7619"
+  description: DR / Velero / GKE Autopilot / 복구
+
+# ── 우선순위 (언제)
+- name: "priority:P0"
+  color: "b60205"
+  description: 즉시 — 이번 주 안
+- name: "priority:P1"
+  color: "d93f0b"
+  description: 다음 스프린트
+- name: "priority:P2"
+  color: "fbca04"
+  description: 백로그
+
+# ── 상태
+- name: "triage"
+  color: "ffffff"
+  description: 분류 필요
+- name: "needs-design"
+  color: "c2e0c6"
+  description: 설계 / ADR 필요
+- name: "needs-tests"
+  color: "bfdadc"
+  description: 테스트 추가 필요
+- name: "blocked"
+  color: "000000"
+  description: 외부 의존성 대기
+- name: "good-first-issue"
+  color: "7057ff"
+  description: 신규 기여자용
+- name: "help-wanted"
+  color: "008672"
+  description: 도움 요청
+
+# ── 기타
+- name: "deps"
+  color: "fef2c0"
+  description: 의존성 업데이트 (Dependabot)
+- name: "breaking-change"
+  color: "b60205"
+  description: 하위 호환 파괴
+- name: "wontfix"
+  color: "ffffff"
+  description: 수정 안 함
+- name: "duplicate"
+  color: "cfd3d7"
+  description: 중복

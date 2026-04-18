@@ -1,0 +1,90 @@
+name: 🐛 버그 리포트
+description: 재현 가능한 결함을 보고합니다.
+title: "fix: <짧은 요약>"
+labels: ["type:bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        중복 이슈 검색을 먼저 해주세요. 운영 장애는 `incident` 템플릿을 사용하세요.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영향 영역
+      multiple: true
+      options:
+        - infra (kubeadm/Cilium/MetalLB/Longhorn/ArgoCD/Velero)
+        - security (Keycloak/Vault/Falco/Kyverno/WAF)
+        - observability (Prom/Grafana/Loki/Tempo/OTel)
+        - data (Kafka/SSE/Reddit/Airflow/dbt/MinIO/BigQuery)
+        - ai (DistilBERT/Gemini/clustering)
+        - service (FastAPI/Next.js/Kong/Redis/Lambda)
+        - ci/cd
+        - docs
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 버전 / 커밋 / 이미지 태그
+      placeholder: "git sha 7f3a2c1 또는 image:v0.4.2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: 재현 절차
+      description: 복붙 가능한 커맨드/입력을 포함해 주세요.
+      placeholder: |
+        1. `make platform-up`
+        2. `kubectl apply -f ...`
+        3. ...
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 로그 · 트레이스 · 메트릭
+      description: 민감 정보 마스킹 후 첨부하세요. Loki/Tempo/Grafana 링크 권장.
+      render: shell
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 심각도
+      options:
+        - "S1 - 운영 중단 / 데이터 유실"
+        - "S2 - 핵심 기능 실패, 우회 없음"
+        - "S3 - 부분 실패, 우회 가능"
+        - "S4 - 경미 / 개선"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 체크리스트
+      options:
+        - label: 중복 이슈 검색 완료
+          required: true
+        - label: 시크릿·개인정보 제거 확인
+          required: true

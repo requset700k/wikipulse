@@ -1,0 +1,101 @@
+name: 🚨 인시던트 / 장애
+description: 운영 환경 장애·보안 사고 트래킹용. 공개 보안 취약점은 Security Advisory로.
+title: "incident: <YYYY-MM-DD> <짧은 요약>"
+labels: ["type:incident", "priority:P0"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **즉시 대응 후 기록용**입니다. 실시간 공조는 Discord `#incident` 채널에서 먼저 수행하세요.
+
+  - type: input
+    id: start
+    attributes:
+      label: 발생 시각 (KST)
+      placeholder: "2026-04-19 14:32"
+    validations:
+      required: true
+
+  - type: input
+    id: detected
+    attributes:
+      label: 탐지 경로
+      placeholder: "Grafana alert / 사용자 제보 / Falco / SIEM ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: SEV
+      options:
+        - "SEV1 - 전체 서비스 중단 / 데이터 유실 / 보안 침해"
+        - "SEV2 - 주요 기능 중단 / SLO 위반"
+        - "SEV3 - 일부 저하"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: 영향 영역
+      multiple: true
+      options:
+        - 온프렘 K8s
+        - AWS
+        - GCP / DR
+        - Kafka 파이프라인
+        - AI (NLP/Gemini)
+        - 대시보드 / API
+        - 보안 (Keycloak/Vault)
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 영향 범위
+      description: 영향 사용자·데이터·SLO 수치
+    validations:
+      required: true
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: 타임라인
+      placeholder: |
+        - 14:32 Grafana `issue-detection-latency` 알림
+        - 14:35 Falco rule `outbound-from-pod` 트리거
+        - 14:41 Kafka consumer lag 복구
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: 임시 조치 / 복구
+    validations:
+      required: true
+
+  - type: textarea
+    id: rootcause
+    attributes:
+      label: 근본 원인 (사후 분석 후 작성 가능)
+
+  - type: textarea
+    id: actions
+    attributes:
+      label: 재발 방지 액션 아이템
+      placeholder: |
+        - [ ] HPA 임계치 조정
+        - [ ] 런북 추가: docs/RUNBOOK/<name>.md
+        - [ ] 알림 룰 보강
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 사후 체크
+      options:
+        - label: 관련 커밋·PR 링크 기입
+        - label: 런북 업데이트
+        - label: Grafana / SIEM 규칙 보강 판단
+        - label: 시크릿 회전 필요 여부 판단

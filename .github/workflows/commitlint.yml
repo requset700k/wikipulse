@@ -1,0 +1,69 @@
+---
+name: commitlint
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-title:
+    name: PR title (Conventional Commits)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            perf
+            docs
+            test
+            chore
+            ci
+            build
+            revert
+            security
+          scopes: |
+            infra
+            k8s
+            terraform
+            ansible
+            gitops
+            kafka
+            airflow
+            dbt
+            nlp
+            llm
+            ai
+            api
+            web
+            obs
+            sec
+            dr
+            data
+            deps
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            PR 제목의 subject는 소문자로 시작해야 합니다.
+            예: feat(kafka): reddit-comments 파티션 증설
+          wip: true
+
+  commits:
+    name: commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.json

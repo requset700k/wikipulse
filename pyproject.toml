@@ -1,0 +1,56 @@
+# Python 전반(데이터 파이프라인, AI 서비스, FastAPI) 공용 품질 설정
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+  ".venv",
+  "venv",
+  "**/migrations",
+  "infra/terraform/**/.terraform",
+  "ansible/.omc",
+]
+
+[tool.ruff.lint]
+# 데이터/AI/웹 전반에 유용한 룰셋. 과도한 건 프로젝트 성장 시 조정.
+select = [
+  "E", "F", "W",      # pycodestyle / pyflakes
+  "I",                # isort
+  "B",                # bugbear
+  "UP",               # pyupgrade
+  "C4",               # comprehensions
+  "SIM",              # simplify
+  "S",                # bandit (보안)
+  "T20",              # print 금지 (구조화 로깅 강제)
+  "ASYNC",            # asyncio 안티패턴
+  "PERF",             # 성능
+  "RUF",              # Ruff 전용
+]
+ignore = [
+  "E501",   # line-length은 formatter가 처리
+  "S101",   # assert: pytest에서 허용
+  "S311",   # non-crypto random 허용
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "T20"]
+"**/airflow/dags/**" = ["T20"]            # DAG 디버깅 print 허용
+"**/notebooks/**" = ["T20", "E402", "F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["wikipulse"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q --strict-markers --strict-config"
+testpaths = ["tests"]
+markers = [
+  "integration: 외부 서비스(Kafka, MinIO, Redis)가 필요한 테스트",
+  "slow: 수초 이상 소요되는 테스트",
+  "gpu: GPU 필요",
+]

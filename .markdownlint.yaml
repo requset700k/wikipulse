@@ -1,0 +1,21 @@
+# markdownlint: 문서 일관성만 강제. 한국어 문서 특성을 고려해 일부 룰은 완화.
+default: true
+
+# 줄 길이 제한 비활성 (한국어 줄바꿈이 임의로 끊기는 걸 방지)
+MD013: false
+
+# 중복 제목 허용 (런북의 "절차 / 검증" 반복 구조)
+MD024:
+  siblings_only: true
+
+# inline HTML 허용 (GitHub Alert, details 사용)
+MD033: false
+
+# 첫 줄 제목 강제 해제 (템플릿 주석 허용)
+MD041: false
+
+# fenced code block의 언어 명시 강제
+MD040: true
+
+# bare URL 금지 해제 (런북에 붙여넣기 편하도록)
+MD034: false

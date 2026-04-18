@@ -1,0 +1,32 @@
+# 줄 끝 문자 일관성: 모든 텍스트 LF 강제
+* text=auto eol=lf
+
+# 바이너리 명시
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.docx  binary
+*.xlsx  binary
+*.zip   binary
+*.tar   binary
+*.tgz   binary
+
+# 쉘/배치 스크립트 강제
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.bat   text eol=crlf
+*.ps1   text eol=crlf
+
+# diff 가독성
+*.lock           linguist-generated=true
+pnpm-lock.yaml   linguist-generated=true
+package-lock.json linguist-generated=true
+
+# 언어 통계에서 벤더/생성물 제외
+**/.terraform/**  linguist-vendored=true
+vendor/**         linguist-vendored=true
+dist/**           linguist-generated=true
+build/**          linguist-generated=true

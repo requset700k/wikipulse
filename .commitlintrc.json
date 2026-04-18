@@ -1,0 +1,51 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "refactor",
+        "perf",
+        "docs",
+        "test",
+        "chore",
+        "ci",
+        "build",
+        "revert",
+        "security"
+      ]
+    ],
+    "scope-enum": [
+      1,
+      "always",
+      [
+        "infra",
+        "k8s",
+        "terraform",
+        "ansible",
+        "gitops",
+        "kafka",
+        "airflow",
+        "dbt",
+        "nlp",
+        "llm",
+        "ai",
+        "api",
+        "web",
+        "obs",
+        "sec",
+        "dr",
+        "data",
+        "deps"
+      ]
+    ],
+    "subject-case": [2, "never", ["upper-case", "pascal-case"]],
+    "subject-empty": [2, "never"],
+    "subject-full-stop": [2, "never", "."],
+    "header-max-length": [2, "always", 100],
+    "body-max-line-length": [1, "always", 120]
+  }
+}
