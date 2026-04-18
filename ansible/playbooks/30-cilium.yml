@@ -1,0 +1,12 @@
+---
+# Phase 3: Cilium CNI 설치 (kube-proxy replacement)
+# 실행: make cilium-up
+# 전제: make k8s-bootstrap 완료 (3 CP HA)
+
+- name: Cilium CNI 설치
+  hosts: control_plane[0]   # cp01 한 대에서만 helm 실행
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: cilium

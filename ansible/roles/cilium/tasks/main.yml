@@ -1,0 +1,82 @@
+---
+# Cilium CNI 설치 — cp01(첫 CP)에서 helm 으로 배포.
+# admin.conf 는 /home/ubuntu/.kube/config 에 이미 배치됨(Phase 2).
+
+- name: kubernetes.core 모듈 의존성 (python kubernetes lib)
+  ansible.builtin.apt:
+    name:
+      - python3-kubernetes
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: helm 바이너리 설치 여부 확인
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: helm_bin
+
+- name: helm 3 설치 (apt repo 없이 get.helm.sh 스크립트 사용)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    executable: /bin/bash
+  when: not helm_bin.stat.exists
+  changed_when: true
+
+- name: cilium helm repo 등록
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: https://helm.cilium.io/
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: Cilium values.yaml 템플릿 렌더
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: /home/ubuntu/cilium-values.yaml
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Cilium helm install/upgrade
+  kubernetes.core.helm:
+    name: "{{ cilium_release_name }}"
+    chart_ref: cilium/cilium
+    chart_version: "{{ cilium_chart_version }}"
+    release_namespace: "{{ cilium_namespace }}"
+    values_files:
+      - /home/ubuntu/cilium-values.yaml
+    wait: true
+    wait_timeout: 10m
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: Cilium DaemonSet rollout 대기
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ cilium_namespace }}
+    rollout status ds/cilium --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: 모든 노드 Ready 대기
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    wait --for=condition=Ready nodes --all --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: control-plane taint 해제 (3노드를 워커 겸용으로)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    taint nodes --all node-role.kubernetes.io/control-plane:NoSchedule-
+  register: untaint
+  changed_when: '"untainted" in untaint.stdout'
+  failed_when:
+    - untaint.rc != 0
+    - '"not found" not in untaint.stderr'
+  when: cilium_untaint_control_plane | bool
+  become_user: ubuntu

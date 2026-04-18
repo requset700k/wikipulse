@@ -1,0 +1,43 @@
+{# Cilium Helm values — CNI-only + kube-proxy replacement #}
+cluster:
+  name: {{ cilium_cluster_name }}
+  id: 1
+
+# kube-proxy 를 완전히 대체 (kubeadm init 시 --skip-phases=addon/kube-proxy)
+kubeProxyReplacement: true
+
+# apiserver 직접 연결 (kube-proxy 가 없어서 Service 로 못 감)
+k8sServiceHost: "{{ cilium_k8s_service_host }}"
+k8sServicePort: {{ cilium_k8s_service_port }}
+
+# IPAM: cluster-pool 모드로 pod CIDR 풀을 명시
+ipam:
+  mode: cluster-pool
+  operator:
+    clusterPoolIPv4PodCIDRList:
+      - "{{ cilium_pod_cidr }}"
+    clusterPoolIPv4MaskSize: 24
+
+# 오버레이 라우팅 (VXLAN) — 호스트 단일 L2 에서 가장 안전
+routingMode: tunnel
+tunnelProtocol: vxlan
+ipv4NativeRoutingCIDR: "{{ cilium_pod_cidr }}"
+
+# BPF masquerading (iptables 대신 eBPF)
+bpf:
+  masquerade: true
+
+# operator HA (노드 3개이므로 2 replica)
+operator:
+  replicas: 2
+  rollOutPods: true
+
+rollOutCiliumPods: true
+
+# Hubble 은 Phase 5 관측성에서 별도 활성화 — 기본은 끄고 시작
+hubble:
+  enabled: false
+
+# MetalLB(Phase 4) 와의 충돌 방지 — Cilium L2 Announcements/LB-IPAM 은 비활성
+l2announcements:
+  enabled: false
