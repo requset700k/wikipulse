@@ -55,6 +55,8 @@ jobs:
   terraform-validate:
     name: terraform validate (${{ matrix.dir }})
     runs-on: ubuntu-latest
+    # infra/ 디렉토리가 레포에 커밋되면 자동 활성화. 미존재 시 skip.
+    if: hashFiles('infra/terraform/**/*.tf') != ''
     strategy:
       fail-fast: false
       matrix:
@@ -63,15 +65,26 @@ jobs:
           - infra/terraform/kvm
     steps:
       - uses: actions/checkout@v4
+      - name: check directory exists
+        id: check
+        run: |
+          if [ -d "${{ matrix.dir }}" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: hashicorp/setup-terraform@v3
+        if: steps.check.outputs.exists == 'true'
         with:
           terraform_version: 1.9.8
       - name: fmt -check
+        if: steps.check.outputs.exists == 'true'
         run: terraform -chdir=${{ matrix.dir }} fmt -check -recursive
-        continue-on-error: false
       - name: init -backend=false
+        if: steps.check.outputs.exists == 'true'
         run: terraform -chdir=${{ matrix.dir }} init -backend=false
       - name: validate
+        if: steps.check.outputs.exists == 'true'
         run: terraform -chdir=${{ matrix.dir }} validate
 
   gitleaks:
