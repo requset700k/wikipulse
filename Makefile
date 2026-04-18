@@ -38,7 +38,7 @@ vm-prep: ## VM에 containerd/kubeadm/kubelet 사전 설치
 	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/10-k8s-nodes.yml
 
 k8s-bootstrap: ## kube-vip + kubeadm HA 컨트롤플레인 부트스트랩
-	bash $(K8S_DIR)/kubeadm/bootstrap.sh
+	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/20-k8s-bootstrap.yml
 
 # ────── Phase 3~4: 플랫폼 스택 ──────
 platform-up: ## Cilium → MetalLB → Longhorn 순차 설치

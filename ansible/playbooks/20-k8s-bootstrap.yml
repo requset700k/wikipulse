@@ -1,0 +1,14 @@
+---
+# Phase 2: kubeadm HA 컨트롤플레인 부트스트랩 (kube-vip)
+# 실행: make k8s-bootstrap
+# 전제: make kvm-apply + make vm-prep 완료 (containerd/kubeadm v1.31 설치 완료)
+
+- name: K8s HA 컨트롤플레인 부트스트랩
+  hosts: control_plane
+  become: true
+  gather_facts: true
+  serial: 1   # kubeadm init → join 순서 보장을 위해 순차 실행
+
+  roles:
+    - role: kube_vip
+    - role: kubeadm_bootstrap

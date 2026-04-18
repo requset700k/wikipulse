@@ -1,0 +1,42 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "{{ ansible_default_ipv4.address }}"
+  bindPort: {{ control_plane_port }}
+nodeRegistration:
+  criSocket: unix:///var/run/containerd/containerd.sock
+  kubeletExtraArgs:
+    node-ip: "{{ ansible_default_ipv4.address }}"
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: "v{{ kubernetes_version }}"
+clusterName: "{{ cluster_name }}"
+controlPlaneEndpoint: "{{ control_plane_vip }}:{{ control_plane_port }}"
+networking:
+  podSubnet: "{{ pod_cidr }}"
+  serviceSubnet: "{{ service_cidr }}"
+  dnsDomain: cluster.local
+apiServer:
+  certSANs:
+    - "{{ control_plane_vip }}"
+    - localhost
+    - 127.0.0.1
+    - "{{ ansible_default_ipv4.address }}"
+  extraArgs:
+    audit-log-maxage: "30"
+controllerManager:
+  extraArgs:
+    bind-address: "0.0.0.0"
+scheduler:
+  extraArgs:
+    bind-address: "0.0.0.0"
+etcd:
+  local:
+    extraArgs:
+      listen-metrics-urls: "http://0.0.0.0:2381"
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: systemd
