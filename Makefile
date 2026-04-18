@@ -52,8 +52,14 @@ longhorn-up: ## Longhorn 분산 블록 스토리지 설치
 
 platform-up: cilium-up metallb-up longhorn-up ## Cilium → MetalLB → Longhorn 순차 설치
 
+# ────── Phase 5: 원격 접근 ──────
+tailscale-up: ## Tailscale subnet router 설치 (최초: AUTHKEY=tskey-auth-...)
+	cd $(ANSIBLE_DIR) && \
+		ansible-playbook -i inventory.yml playbooks/50-tailscale.yml \
+			$(if $(AUTHKEY),-e tailscale_authkey=$(AUTHKEY),)
+
 # ────── Phase 6: GitOps ──────
 gitops-up: ## ArgoCD 설치 + 루트 App-of-Apps 적용
 	bash $(GITOPS_DIR)/argocd/install.sh
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up metallb-up longhorn-up platform-up gitops-up
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up metallb-up longhorn-up platform-up tailscale-up gitops-up
