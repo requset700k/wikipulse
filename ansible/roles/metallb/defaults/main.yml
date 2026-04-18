@@ -1,0 +1,17 @@
+---
+# MetalLB L2 모드 — Service type=LoadBalancer 를 위한 L2 ARP 광고.
+# Cilium 의 L2Announcements 는 Phase 3 에서 비활성화했으므로 충돌 없음.
+
+metallb_chart_version: "0.14.9"
+metallb_namespace: metallb-system
+metallb_release_name: metallb
+
+# wpbr0 서브넷(10.10.0.0/24) 중 VM/VIP 와 겹치지 않는 대역을 LB 풀로 할당.
+#   - Gateway:     10.10.0.1
+#   - VIP:         10.10.0.10
+#   - VMs:         10.10.0.11~13
+#   - LB pool:     10.10.0.100~200 (100개)
+metallb_ip_pool_name: default-pool
+metallb_ip_pool_range: "10.10.0.100-10.10.0.200"
+
+metallb_l2_advertisement_name: default-l2

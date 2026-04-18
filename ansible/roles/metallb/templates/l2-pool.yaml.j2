@@ -1,0 +1,18 @@
+{# MetalLB L2 IP 풀 + L2Advertisement — controller 기동 후 적용 #}
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: {{ metallb_ip_pool_name }}
+  namespace: {{ metallb_namespace }}
+spec:
+  addresses:
+    - {{ metallb_ip_pool_range }}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: {{ metallb_l2_advertisement_name }}
+  namespace: {{ metallb_namespace }}
+spec:
+  ipAddressPools:
+    - {{ metallb_ip_pool_name }}

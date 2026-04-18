@@ -1,0 +1,17 @@
+{# MetalLB Helm values — L2 모드 기본값으로 충분 #}
+controller:
+  logLevel: info
+
+speaker:
+  logLevel: info
+  # Cilium kube-proxy replacement 환경에서 MetalLB speaker 는 hostNetwork 로
+  # 동작하므로 추가 설정 불필요. memberlist 도 기본값 사용.
+  frr:
+    enabled: false     # L2 모드만 사용 (BGP 불필요)
+
+crds:
+  enabled: true
+
+prometheus:
+  serviceMonitor:
+    enabled: false     # Phase 5 관측성에서 활성화

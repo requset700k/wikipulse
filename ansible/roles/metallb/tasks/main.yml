@@ -1,0 +1,65 @@
+---
+# MetalLB L2 모드 설치 — cp01 에서 helm 으로 배포.
+
+- name: MetalLB helm repo 등록
+  kubernetes.core.helm_repository:
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: MetalLB values.yaml 템플릿 렌더
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: /home/ubuntu/metallb-values.yaml
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: MetalLB helm install/upgrade
+  kubernetes.core.helm:
+    name: "{{ metallb_release_name }}"
+    chart_ref: metallb/metallb
+    chart_version: "{{ metallb_chart_version }}"
+    release_namespace: "{{ metallb_namespace }}"
+    create_namespace: true
+    values_files:
+      - /home/ubuntu/metallb-values.yaml
+    wait: true
+    wait_timeout: 5m
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: MetalLB controller rollout 대기
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ metallb_namespace }}
+    rollout status deploy/{{ metallb_release_name }}-controller --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: MetalLB speaker DaemonSet rollout 대기
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ metallb_namespace }}
+    rollout status ds/{{ metallb_release_name }}-speaker --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: L2 IP 풀 매니페스트 렌더
+  ansible.builtin.template:
+    src: l2-pool.yaml.j2
+    dest: /home/ubuntu/metallb-l2-pool.yaml
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: L2 IPAddressPool + L2Advertisement 적용
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    apply -f /home/ubuntu/metallb-l2-pool.yaml
+  register: apply_l2
+  changed_when: '"configured" in apply_l2.stdout or "created" in apply_l2.stdout'
+  become_user: ubuntu

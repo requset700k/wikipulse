@@ -1,0 +1,12 @@
+---
+# Phase 4a: MetalLB L2 LoadBalancer 설치
+# 실행: make metallb-up
+# 전제: make cilium-up 완료
+
+- name: MetalLB 설치
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: metallb
