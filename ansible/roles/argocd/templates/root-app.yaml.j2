@@ -1,0 +1,30 @@
+---
+# App-of-Apps 루트 Application — gitops/argocd/apps/ 아래 모든 Application YAML 을 배포.
+# 초기 단계: auto-sync + self-heal + auto-prune + CreateNamespace 전부 ON → merge 즉시 반영.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root-apps
+  namespace: {{ argocd_namespace }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ argocd_root_app_repo }}
+    targetRevision: {{ argocd_root_app_revision }}
+    path: {{ argocd_root_app_path }}
+    directory:
+      recurse: true
+      include: "*.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ argocd_namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true

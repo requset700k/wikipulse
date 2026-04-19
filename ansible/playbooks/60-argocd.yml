@@ -1,0 +1,12 @@
+---
+# Phase 6: ArgoCD 설치 + App-of-Apps 루트 Application
+# 실행: make argocd-up
+# 전제: cilium, metallb, longhorn 완료 (platform-up)
+
+- name: ArgoCD 설치 + 루트 App 적용
+  hosts: control_plane[0]
+  become: true
+  gather_facts: true
+
+  roles:
+    - role: argocd

@@ -1,0 +1,99 @@
+---
+# ArgoCD 설치 (Helm) + App-of-Apps 루트 Application 적용.
+# cp01 에서 실행. LB IP 는 MetalLB 풀에서 자동 할당.
+
+- name: ArgoCD helm repo 등록
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: "{{ argocd_chart_repo }}"
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: ArgoCD values.yaml 템플릿 렌더
+  ansible.builtin.template:
+    src: values.yaml.j2
+    dest: /home/ubuntu/argocd-values.yaml
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: ArgoCD helm install/upgrade
+  kubernetes.core.helm:
+    name: "{{ argocd_release_name }}"
+    chart_ref: "argo/{{ argocd_chart_name }}"
+    chart_version: "{{ argocd_chart_version }}"
+    release_namespace: "{{ argocd_namespace }}"
+    create_namespace: true
+    values_files:
+      - /home/ubuntu/argocd-values.yaml
+    wait: true
+    wait_timeout: 10m
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config
+
+- name: argocd-server Deployment rollout 대기
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ argocd_namespace }}
+    rollout status deploy/{{ argocd_release_name }}-server --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: argocd-application-controller StatefulSet rollout 대기
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ argocd_namespace }}
+    rollout status statefulset/{{ argocd_release_name }}-application-controller --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: argocd-server Service LB IP 조회
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ argocd_namespace }}
+    get svc {{ argocd_release_name }}-server
+    -o jsonpath={.status.loadBalancer.ingress[0].ip}
+  register: argocd_lb_ip
+  changed_when: false
+  retries: 10
+  delay: 6
+  until: argocd_lb_ip.stdout | length > 0
+  become_user: ubuntu
+
+- name: App-of-Apps root Application 매니페스트 렌더
+  ansible.builtin.template:
+    src: root-app.yaml.j2
+    dest: /home/ubuntu/argocd-root-app.yaml
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+  when: argocd_apply_root_app | bool
+
+- name: App-of-Apps root Application 적용
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    apply -f /home/ubuntu/argocd-root-app.yaml
+  register: apply_root
+  changed_when: '"configured" in apply_root.stdout or "created" in apply_root.stdout'
+  become_user: ubuntu
+  when: argocd_apply_root_app | bool
+
+- name: 초기 admin 비밀번호 조회
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    -n {{ argocd_namespace }}
+    get secret argocd-initial-admin-secret
+    -o jsonpath={.data.password}
+  register: argocd_admin_pwd_b64
+  changed_when: false
+  failed_when: false
+  become_user: ubuntu
+
+- name: 접속 정보 표시
+  ansible.builtin.debug:
+    msg:
+      - "ArgoCD URL:   http://{{ argocd_lb_ip.stdout }}"
+      - "Username:     admin"
+      - "Password:     {{ argocd_admin_pwd_b64.stdout | b64decode if argocd_admin_pwd_b64.stdout else '(이미 초기 secret 삭제됨 — 재설정 필요)' }}"

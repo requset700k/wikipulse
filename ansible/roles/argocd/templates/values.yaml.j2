@@ -1,0 +1,75 @@
+---
+# ArgoCD Helm values — 초기 개발 단계 (단일 replica, HA off, insecure=true)
+# Phase 9 이후 SSO/Dex + Redis HA + controller shard 등 강화 예정.
+
+global:
+  # 리소스 타이트한 홈랩을 고려해 requests 작게.
+  logging:
+    format: text
+    level: info
+
+configs:
+  params:
+    # self-signed 경고/리다이렉트 루프 방지. LB 경유로 80/443 모두 허용.
+    server.insecure: {{ argocd_server_insecure | ternary('true', 'false') }}
+  cm:
+    # 내부망 전용이라 익명 접근 차단은 유지(기본값), exec 허용은 로컬 디버깅용.
+    exec.enabled: "true"
+
+# ── Server (UI + API) ──────────────────────────────────────────────
+server:
+  replicas: 1
+  autoscaling:
+    enabled: false
+
+  service:
+    type: LoadBalancer
+{% if argocd_loadbalancer_ip %}
+    loadBalancerIP: {{ argocd_loadbalancer_ip }}
+{% endif %}
+
+  # LB 경유 insecure HTTP 로 접근하므로 gRPC-Web 이 켜져 있어야 argocd CLI 가 동작.
+  extraArgs:
+    - --insecure
+
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+# ── Repo Server ────────────────────────────────────────────────────
+repoServer:
+  replicas: 1
+  autoscaling:
+    enabled: false
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits:   { cpu: 1000m, memory: 1Gi }
+
+# ── Application Controller ─────────────────────────────────────────
+controller:
+  replicas: 1    # shard=1 — 초기 단계는 단일 샤드로 충분
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 2000m, memory: 2Gi }
+
+# ── ApplicationSet (App-of-Apps 확장성) ────────────────────────────
+applicationSet:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 500m, memory: 256Mi }
+
+# ── Notifications — 초기엔 비활성 (Slack 훅은 Phase 8+ 에서) ──────
+notifications:
+  enabled: false
+
+# ── Dex (SSO) — 초기엔 비활성, 기본 admin 로그인 ───────────────────
+dex:
+  enabled: false
+
+# ── Redis — single replica (HA 아님) ───────────────────────────────
+redis:
+  enabled: true
+redis-ha:
+  enabled: false

@@ -1,0 +1,21 @@
+---
+# ArgoCD 설치 기본값 — 초기 개발 단계용 (단일 replica, HA off)
+
+argocd_namespace: argocd
+argocd_release_name: argocd
+argocd_chart_repo: https://argoproj.github.io/argo-helm
+argocd_chart_name: argo-cd
+# argo-cd v7.x (app v2.13 계열). 안정 버전 고정.
+argocd_chart_version: "7.7.10"
+
+# 접근 편의성 — self-signed 경고/redirect 루프 회피, 내부망 전용이므로 insecure 허용.
+argocd_server_insecure: true
+
+# MetalLB 가 10.10.0.100-200 풀에서 자동 할당. 고정이 필요하면 아래에 IP 명시.
+argocd_loadbalancer_ip: ""
+
+# App-of-Apps 루트 Application 을 이 역할에서 같이 적용할지 여부.
+argocd_apply_root_app: true
+argocd_root_app_repo: https://github.com/requset700k/wikipulse.git
+argocd_root_app_revision: main
+argocd_root_app_path: gitops/argocd/apps
