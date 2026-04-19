@@ -63,3 +63,18 @@
   register: apply_l2
   changed_when: '"configured" in apply_l2.stdout or "created" in apply_l2.stdout'
   become_user: ubuntu
+
+# kubeadm 이 CP 노드에 기본으로 붙이는 exclude 레이블을 제거해야 MetalLB 가 announce 한다.
+# worker 노드 없는 3-CP 단일 하이퍼바이저 구성에서는 CP 가 LB 타겟도 겸해야 함.
+# Phase 3 에서 control-plane taint 도 이미 제거했으므로 일관성 유지.
+- name: CP 노드에서 exclude-from-external-load-balancers 레이블 제거
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/home/ubuntu/.kube/config
+    label node {{ item }}
+    node.kubernetes.io/exclude-from-external-load-balancers-
+    --overwrite
+  loop: "{{ groups.control_plane }}"
+  register: unlabel
+  changed_when: '"labeled" in unlabel.stdout and "not labeled" not in unlabel.stdout'
+  failed_when: false
+  become_user: ubuntu
