@@ -59,7 +59,19 @@ tailscale-up: ## Tailscale subnet router 설치 (최초: AUTHKEY=tskey-auth-...)
 			$(if $(AUTHKEY),-e tailscale_authkey=$(AUTHKEY),)
 
 # ────── Phase 6: GitOps ──────
-gitops-up: ## ArgoCD 설치 + 루트 App-of-Apps 적용
-	bash $(GITOPS_DIR)/argocd/install.sh
+argocd-up: ## ArgoCD 설치 + 루트 App-of-Apps 적용
+	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/60-argocd.yml
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up metallb-up longhorn-up platform-up tailscale-up gitops-up
+argocd-password: ## ArgoCD 초기 admin 비밀번호 출력
+	@ssh -o ExitOnForwardFailure=no -o ClearAllForwardings=yes \
+		-J ykgoesdumb@192.168.45.245 -i ~/.ssh/ykgoesdumb_key ubuntu@10.10.0.11 \
+		"kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath={.data.password} | base64 -d" \
+		&& echo
+
+argocd-url: ## ArgoCD LB IP 출력 (http://<ip> 로 접속)
+	@ssh -o ExitOnForwardFailure=no -o ClearAllForwardings=yes \
+		-J ykgoesdumb@192.168.45.245 -i ~/.ssh/ykgoesdumb_key ubuntu@10.10.0.11 \
+		"kubectl -n argocd get svc argocd-server -o jsonpath={.status.loadBalancer.ingress[0].ip}" \
+		| awk '{print "http://"$$0}'
+
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url
