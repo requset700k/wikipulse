@@ -1,4 +1,8 @@
 ---
+# 인프라 품질 게이트: pre-commit 전체 훅을 하나의 job 에서 실행.
+# ruff/ruff-format 은 ci-lint.yml 의 독립 job 이 담당하므로 SKIP 으로 제외해
+# CI 총 러닝타임에서 중복을 없앤다. terraform/gitleaks/yamllint/ansible-lint/
+# shellcheck/markdownlint/kubeconform/prettier 는 모두 pre-commit 훅으로 일원화.
 name: lint
 
 on:
@@ -17,7 +21,7 @@ permissions:
 
 jobs:
   pre-commit:
-    name: pre-commit (all hooks)
+    name: pre-commit (all hooks, ruff skipped)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,51 +53,7 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit
 
-      - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff-on-failure
-
-  terraform-validate:
-    name: terraform validate (${{ matrix.dir }})
-    runs-on: ubuntu-latest
-    # hashFiles() 는 job-level if 에서 평가 불가 → 내부 step 의
-    # `check directory exists` 로 디렉토리 단위 skip 처리.
-    strategy:
-      fail-fast: false
-      matrix:
-        dir:
-          - infra/terraform/envs/onprem
-          - infra/terraform/kvm
-    steps:
-      - uses: actions/checkout@v4
-      - name: check directory exists
-        id: check
-        run: |
-          if [ -d "${{ matrix.dir }}" ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-      - uses: hashicorp/setup-terraform@v3
-        if: steps.check.outputs.exists == 'true'
-        with:
-          terraform_version: 1.9.8
-      - name: fmt -check
-        if: steps.check.outputs.exists == 'true'
-        run: terraform -chdir=${{ matrix.dir }} fmt -check -recursive
-      - name: init -backend=false
-        if: steps.check.outputs.exists == 'true'
-        run: terraform -chdir=${{ matrix.dir }} init -backend=false
-      - name: validate
-        if: steps.check.outputs.exists == 'true'
-        run: terraform -chdir=${{ matrix.dir }} validate
-
-  gitleaks:
-    name: gitleaks (secrets scan)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - name: Run pre-commit (skip ruff, delegated to ci-lint.yml)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SKIP: ruff,ruff-format
+        run: pre-commit run --all-files --show-diff-on-failure
