@@ -55,8 +55,8 @@ jobs:
   terraform-validate:
     name: terraform validate (${{ matrix.dir }})
     runs-on: ubuntu-latest
-    # infra/ 디렉토리가 레포에 커밋되면 자동 활성화. 미존재 시 skip.
-    if: hashFiles('infra/terraform/**/*.tf') != ''
+    # hashFiles() 는 job-level if 에서 평가 불가 → 내부 step 의
+    # `check directory exists` 로 디렉토리 단위 skip 처리.
     strategy:
       fail-fast: false
       matrix:
