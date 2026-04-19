@@ -13,6 +13,6 @@ module "kvm" {
   # nodes = { ... }
 }
 
-output "nodes"              { value = module.kvm.nodes }
-output "control_plane_ips"  { value = module.kvm.control_plane_ips }
-output "ansible_inventory"  { value = module.kvm.ansible_inventory_snippet }
+output "nodes" { value = module.kvm.nodes }
+output "control_plane_ips" { value = module.kvm.control_plane_ips }
+output "ansible_inventory" { value = module.kvm.ansible_inventory_snippet }

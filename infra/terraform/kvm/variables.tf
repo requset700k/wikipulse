@@ -49,10 +49,10 @@ variable "gateway" {
 variable "nodes" {
   description = "K8s 노드 정의. 계획서 기준 3노드 HA(컨트롤플레인+워커 겸용)"
   type = map(object({
-    role    = string        # "control-plane" (Phase 2에서 taint 해제하여 워커 겸용)
+    role    = string # "control-plane" (Phase 2에서 taint 해제하여 워커 겸용)
     ip      = string
     cpu     = number
-    memory  = number         # MB
+    memory  = number # MB
     disk_gb = number
   }))
 
