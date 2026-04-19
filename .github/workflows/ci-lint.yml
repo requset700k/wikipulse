@@ -1,0 +1,56 @@
+---
+# Fast feedback (~10s): 모든 PR/푸시에서 Ruff + ESLint.
+# 무거운 보안 스캔은 codeql.yml / image-scan.yml 로 분리되어 개발 흐름을 막지 않음.
+name: ci-lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ruff:
+    name: ruff (python lint + format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Ruff lint
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.7.4"
+          args: "check --output-format=github"
+
+      - name: Run Ruff format check
+        uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.7.4"
+          args: "format --check --diff"
+
+  eslint:
+    name: eslint (js/ts lint)
+    runs-on: ubuntu-latest
+    # 프론트엔드 스캐폴드가 들어오기 전(package.json 미존재)에는 skip.
+    if: hashFiles('**/package.json') != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+
+      - name: Run ESLint
+        run: npm run lint --if-present
