@@ -1,6 +1,10 @@
 ---
 # CodeQL (~15분): AST 기반 심층 보안 분석. PR 마다 돌리면 개발 흐름을 막아
 # main 머지 + 주간 스케줄로만 실행. 취약점은 매일 새로 생기지 않음.
+#
+# 초기 단계 — Python/JS 소스는 아직 없음. 'actions' 언어로 GitHub Workflow
+# 보안(secret 유출, third-party action 위험 등)만 검사. 소스 들어오면 matrix
+# 에 python / javascript-typescript 를 추가한다.
 name: codeql
 
 on:
@@ -24,11 +28,12 @@ jobs:
   analyze:
     name: CodeQL (${{ matrix.language }})
     runs-on: ubuntu-latest
-    # Python 전용. 프론트엔드 (JS/TS) 도입 시 matrix 에 'javascript-typescript' 추가.
     strategy:
       fail-fast: false
       matrix:
-        language: [python]
+        include:
+          - language: actions
+            build-mode: none
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +41,7 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
           queries: security-and-quality
 
       - name: Perform CodeQL Analysis
