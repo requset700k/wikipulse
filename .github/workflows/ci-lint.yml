@@ -1,13 +1,36 @@
 ---
-# Fast feedback (~10s): 모든 PR/푸시에서 Ruff + ESLint.
-# 무거운 보안 스캔은 codeql.yml / image-scan.yml 로 분리되어 개발 흐름을 막지 않음.
+# Fast feedback (~10s): Python / JS-TS 소스가 바뀐 PR 에서만 Ruff + ESLint.
+# 경로 필터가 맞는 변경이 없으면 workflow 자체가 뜨지 않아 runner 비용 0.
+# (lint.yml 의 pre-commit 은 ruff 를 SKIP 해 ci-lint 와 중복 실행을 피한다.)
 name: ci-lint
 
 on:
   pull_request:
     branches: [main]
+    paths:
+      - '**/*.py'
+      - '**/pyproject.toml'
+      - '**/requirements*.txt'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '.github/workflows/ci-lint.yml'
   push:
     branches: [main]
+    paths:
+      - '**/*.py'
+      - '**/pyproject.toml'
+      - '**/requirements*.txt'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '.github/workflows/ci-lint.yml'
   workflow_dispatch:
 
 concurrency:
