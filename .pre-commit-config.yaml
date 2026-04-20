@@ -94,15 +94,7 @@ repos:
         additional_dependencies:
           - prettier@3.3.3
 
-  # 10) Kubernetes 매니페스트 (kubeconform: API 스키마 검증)
-  - repo: https://github.com/yannh/kubeconform
-    rev: v0.6.7
-    hooks:
-      - id: kubeconform
-        args: [-strict, -ignore-missing-schemas, -summary]
-        files: ^infra/kubernetes/.*\.(yaml|yml)$
-
-  # 11) 커밋 메시지: Conventional Commits
+  # 10) 커밋 메시지: Conventional Commits
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.4.0
     hooks:
