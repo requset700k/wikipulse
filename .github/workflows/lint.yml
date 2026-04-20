@@ -46,6 +46,15 @@ jobs:
             https://github.com/mvdan/sh/releases/download/v3.10.0/shfmt_v3.10.0_linux_amd64
           sudo chmod +x /usr/local/bin/shfmt
 
+      - name: Install ansible-core and collections
+        # ansible-lint 는 모듈 경로를 해석할 때 ~/.ansible/collections 를 탐색.
+        # kubernetes.core / community.general / ansible.posix 를 미리 깔아두지
+        # 않으면 syntax-check[unknown-module] 로 실패한다.
+        # (pre-commit 가상환경은 격리되지만 ANSIBLE_COLLECTIONS_PATH 기본값은 공유.)
+        run: |
+          pip install 'ansible-core>=2.17'
+          ansible-galaxy collection install -r ansible/requirements.yml
+
       - name: Cache pre-commit envs
         uses: actions/cache@v4
         with:

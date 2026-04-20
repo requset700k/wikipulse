@@ -18,6 +18,7 @@ ansible/group_vars/**/vault.yml
 kubeconfig
 kubeconfig.*
 *.kubeconfig
+.kube-local/
 **/secrets/
 *.pem
 *.key

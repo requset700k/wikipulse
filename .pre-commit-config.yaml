@@ -52,6 +52,8 @@ repos:
         args: [--args=--config=.terraform-docs.yml]
 
   # 5) Ansible
+  # 루트 ansible.cfg (roles_path=ansible/roles) 가 없으면 ansible-lint 가
+  # <playbook_dir>/roles 만 뒤져서 syntax-check 에서 "role not found" 실패.
   - repo: https://github.com/ansible/ansible-lint
     rev: v25.12.2
     hooks:

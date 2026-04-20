@@ -1,0 +1,21 @@
+---
+# ansible-lint 설정 (repo root). roles_path 는 같은 계층 ansible.cfg 가 담당.
+# 아래 skip 은 "초기 스캐폴드" 기준 정책: role 역할·네이밍 규약이 완전히 확정되기
+# 전 idiomatic 계열 룰을 강제하지 않는다.
+skip_list:
+  # 한국어 task name 허용 (name[casing] 은 영문 대문자 시작 강제)
+  - name
+  # role 접두어 없이 register/vars 사용 허용 (var-naming[no-role-prefix])
+  - var-naming
+  # become_user 단독 사용 허용 (become: true 없이 사용하는 패턴 존재)
+  - partial-become
+  # command/shell 모듈의 changed_when 강제 해제 (register 로 처리)
+  - no-changed-when
+  # yaml[line-length]: 긴 SSH 옵션 문자열을 쪼갤 수 없음 (inventory.yml 등)
+  - yaml[line-length]
+
+exclude_paths:
+  - collections/
+  - .venv/
+  # inventory.yml 은 gitignore 대상 (로컬 전용). 예시 파일만 린트.
+  - ansible/inventory.yml
