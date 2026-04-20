@@ -1,6 +1,6 @@
 ---
 # Tailscale subnet router 설치 + subnet route 광고.
-# 실행: ansible-playbook -i inventory.yml playbooks/50-tailscale.yml
+# 실행: ansible-playbook ansible/playbooks/50-tailscale.yml
 #        -e tailscale_authkey=tskey-auth-...    # 최초 1회만 필요
 
 - name: authkey 제공되었는지(최초 설치) 여부 확인

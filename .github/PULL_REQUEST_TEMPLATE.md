@@ -80,7 +80,7 @@ PR 제목 규칙 (Conventional Commits):
 # 로컬/사전 검증 커맨드 (해당 항목만)
 pre-commit run -a
 terraform -chdir=infra/terraform/envs/onprem plan
-ansible-playbook -i inventory.yml playbooks/*.yml --check --diff
+ansible-playbook ansible/playbooks/*.yml --check --diff
 kubectl diff -k <kustomize-path>
 pytest -q                # Python
 pnpm test && pnpm lint   # Next.js
