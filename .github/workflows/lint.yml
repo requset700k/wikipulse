@@ -30,7 +30,9 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          # ansible-lint v25 계열은 python_spec='python3.13' 을 요구해서
+          # pre-commit 가상환경 생성이 3.11 에서는 실패한다.
+          python-version: '3.13'
           cache: pip
 
       - uses: hashicorp/setup-terraform@v3
