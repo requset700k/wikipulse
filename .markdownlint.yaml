@@ -14,8 +14,14 @@ MD033: false
 # 첫 줄 제목 강제 해제 (템플릿 주석 허용)
 MD041: false
 
-# fenced code block의 언어 명시 강제
-MD040: true
+# fenced code block 언어 명시: 한국어 설명·체크리스트에 섞인 빈 fence 빈번 → off.
+MD040: false
 
 # bare URL 금지 해제 (런북에 붙여넣기 편하도록)
 MD034: false
+
+# heading/fence/list 주변 공백: 한국어 문서의 촘촘한 섹션 구조를 깨뜨리는 스타일
+# 규칙이라 off. 가독성에 직접 영향 주는 다른 default 룰은 그대로 유지.
+MD022: false
+MD031: false
+MD032: false
