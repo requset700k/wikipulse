@@ -75,4 +75,7 @@ argocd-url: ## ArgoCD LB IP 출력 (http://<ip> 로 접속)
 		"kubectl -n argocd get svc argocd-server -o jsonpath={.status.loadBalancer.ingress[0].ip}" \
 		| awk '{print "http://"$$0}'
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url
+cert-manager-up: ## cert-manager install + WikiPulse internal CA bootstrap
+	ansible-playbook $(ANSIBLE_DIR)/playbooks/31-cert-manager.yml
+
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url
