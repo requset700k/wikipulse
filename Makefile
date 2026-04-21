@@ -9,6 +9,8 @@ TF_KVM_DIR  := infra/terraform/kvm
 TF_KVM_ENV  := infra/terraform/envs/onprem
 K8S_DIR     := infra/kubernetes
 GITOPS_DIR  := gitops
+KEYCLOAK_SECRETS_FILE ?=
+ANSIBLE_VAULT_PASSWORD_FILE ?=
 
 # ────── 도움말 ──────
 help: ## 사용 가능한 명령 목록
@@ -78,4 +80,12 @@ argocd-url: ## ArgoCD LB IP 출력 (http://<ip> 로 접속)
 cert-manager-up: ## cert-manager install + WikiPulse internal CA bootstrap
 	ansible-playbook $(ANSIBLE_DIR)/playbooks/31-cert-manager.yml
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url
+keycloak-foundation-up: ## keycloak operator + postgres ha foundation (vault secrets required)
+	@test -n "$(KEYCLOAK_SECRETS_FILE)" || (echo "KEYCLOAK_SECRETS_FILE=<vault-vars.yml> 를 지정하세요"; exit 1)
+	@test -f "$(KEYCLOAK_SECRETS_FILE)" || (echo "secret vars file not found: $(KEYCLOAK_SECRETS_FILE)"; exit 1)
+	@if [ -n "$(ANSIBLE_VAULT_PASSWORD_FILE)" ] && [ ! -f "$(ANSIBLE_VAULT_PASSWORD_FILE)" ]; then echo "vault password file not found: $(ANSIBLE_VAULT_PASSWORD_FILE)"; exit 1; fi
+	ansible-playbook $(ANSIBLE_DIR)/playbooks/70-keycloak-foundation.yml \
+		--extra-vars "@$(KEYCLOAK_SECRETS_FILE)" \
+		$(if $(ANSIBLE_VAULT_PASSWORD_FILE),--vault-password-file $(ANSIBLE_VAULT_PASSWORD_FILE),--ask-vault-pass)
+
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up keycloak-foundation-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url

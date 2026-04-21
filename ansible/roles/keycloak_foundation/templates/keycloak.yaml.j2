@@ -1,0 +1,25 @@
+---
+apiVersion: "{{ keycloak_foundation_api_group }}/{{ keycloak_foundation_cr_version_selected }}"
+kind: Keycloak
+metadata:
+  name: "{{ keycloak_foundation_name }}"
+  namespace: "{{ keycloak_foundation_namespace }}"
+spec:
+  instances: {{ keycloak_foundation_instances }}
+  db:
+    vendor: postgres
+    host: "{{ keycloak_foundation_db_service_name }}"
+    usernameSecret:
+      name: "{{ keycloak_foundation_db_secret_name }}"
+      key: username
+    passwordSecret:
+      name: "{{ keycloak_foundation_db_secret_name }}"
+      key: password
+  http:
+    httpEnabled: true
+  ingress:
+    enabled: false
+  proxy:
+    headers: xforwarded
+  hostname:
+    strict: false

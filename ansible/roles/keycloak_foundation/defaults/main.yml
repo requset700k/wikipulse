@@ -1,0 +1,14 @@
+---
+keycloak_foundation_namespace: keycloak
+keycloak_foundation_name: wikipulse-keycloak
+keycloak_foundation_kubeconfig: /home/ubuntu/.kube/config
+keycloak_foundation_manifest_path: /home/ubuntu/keycloak-foundation.yaml
+
+keycloak_foundation_api_group: k8s.keycloak.org
+keycloak_foundation_cr_version_preferred: v2alpha1
+keycloak_foundation_cr_version_override: ""
+
+keycloak_foundation_instances: 1
+keycloak_foundation_db_service_name: keycloak-db-postgresql-ha-pgpool
+keycloak_foundation_db_secret_name: keycloak-db-credentials
+keycloak_foundation_service_name: "{{ keycloak_foundation_name }}-service"

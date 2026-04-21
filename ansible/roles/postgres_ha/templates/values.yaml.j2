@@ -1,0 +1,35 @@
+---
+global:
+  postgresql:
+    username: "{{ postgres_ha_username }}"
+    password: "{{ postgres_ha_password }}"
+    database: "{{ postgres_ha_database }}"
+    repmgrPassword: "{{ postgres_ha_repmgr_password }}"
+
+postgresql:
+  replicaCount: {{ postgres_ha_postgresql_replicas }}
+  podManagementPolicy: Parallel
+  podAntiAffinityPreset: soft
+  persistence:
+    enabled: true
+    storageClass: "{{ postgres_ha_storage_class }}"
+    size: "{{ postgres_ha_storage_size }}"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+pgpool:
+  replicaCount: {{ postgres_ha_pgpool_replicas }}
+  podAntiAffinityPreset: soft
+  adminPassword: "{{ postgres_ha_pgpool_admin_password }}"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
