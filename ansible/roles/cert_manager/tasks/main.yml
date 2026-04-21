@@ -1,0 +1,174 @@
+---
+- name: Install python dependencies for kubernetes.core modules
+  ansible.builtin.apt:
+    name:
+      - python3-kubernetes
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: Check whether helm is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: cert_manager_helm_bin
+
+- name: Install helm 3 when missing
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    executable: /bin/bash
+  when: not cert_manager_helm_bin.stat.exists
+  changed_when: true
+
+- name: Copy cert-manager values manifest to control plane host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../infra/kubernetes/cert-manager/values.yaml"
+    dest: "{{ cert_manager_values_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Copy cert-manager namespace manifest to control plane host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../infra/kubernetes/cert-manager/namespace.yaml"
+    dest: "{{ cert_manager_namespace_manifest_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Copy cert-manager PKI bootstrap manifest to control plane host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../infra/kubernetes/cert-manager/pki-bootstrap.yaml"
+    dest: "{{ cert_manager_pki_bootstrap_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Apply cert-manager namespace with pod security labels
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    apply -f {{ cert_manager_namespace_manifest_path }}
+  register: cert_manager_apply_namespace
+  changed_when: >-
+    'created' in cert_manager_apply_namespace.stdout
+    or 'configured' in cert_manager_apply_namespace.stdout
+  become_user: ubuntu
+
+- name: Install or upgrade cert-manager chart
+  kubernetes.core.helm:
+    name: "{{ cert_manager_release_name }}"
+    chart_ref: "{{ cert_manager_chart_ref }}"
+    chart_version: "{{ cert_manager_chart_version }}"
+    release_namespace: "{{ cert_manager_namespace }}"
+    create_namespace: false
+    values_files:
+      - "{{ cert_manager_values_path }}"
+    wait: true
+    wait_timeout: 10m
+  become_user: ubuntu
+  environment:
+    KUBECONFIG: "{{ cert_manager_kubeconfig }}"
+
+- name: Wait until cert-manager CRDs are established
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    wait --for=condition=Established
+    crd/certificates.cert-manager.io
+    crd/clusterissuers.cert-manager.io
+    --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for cert-manager controller deployment rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    -n {{ cert_manager_namespace }}
+    rollout status deploy/{{ cert_manager_release_name }} --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for cert-manager cainjector deployment rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    -n {{ cert_manager_namespace }}
+    rollout status deploy/{{ cert_manager_release_name }}-cainjector --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for cert-manager webhook deployment rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    -n {{ cert_manager_namespace }}
+    rollout status deploy/{{ cert_manager_release_name }}-webhook --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Bootstrap selfsigned-root -> wikipulse-ca chain
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    apply -f {{ cert_manager_pki_bootstrap_path }}
+  register: cert_manager_apply_pki
+  changed_when: >-
+    'created' in cert_manager_apply_pki.stdout
+    or 'configured' in cert_manager_apply_pki.stdout
+  become_user: ubuntu
+
+- name: Wait for selfsigned-root ClusterIssuer to become Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    wait --for=condition=Ready clusterissuer/selfsigned-root --timeout=2m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for root CA certificate to become Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    -n {{ cert_manager_namespace }}
+    wait --for=condition=Ready certificate/wikipulse-root-ca --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for root CA ClusterIssuer to become Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    wait --for=condition=Ready clusterissuer/wikipulse-root-ca --timeout=2m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for internal CA certificate to become Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    -n {{ cert_manager_namespace }}
+    wait --for=condition=Ready certificate/wikipulse-ca --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait for wikipulse-ca ClusterIssuer to become Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    wait --for=condition=Ready clusterissuer/wikipulse-ca --timeout=2m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Print cert-manager summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    get pods -n {{ cert_manager_namespace }} -o wide
+  changed_when: false
+  become_user: ubuntu
+
+- name: Print ClusterIssuer summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    get clusterissuer
+  changed_when: false
+  become_user: ubuntu
+
+- name: Print Certificate summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ cert_manager_kubeconfig }}
+    -n {{ cert_manager_namespace }}
+    get certificate
+  changed_when: false
+  become_user: ubuntu

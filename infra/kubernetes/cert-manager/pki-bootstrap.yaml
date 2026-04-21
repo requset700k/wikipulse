@@ -1,0 +1,79 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-root
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wikipulse-root-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: "WikiPulse Root CA"
+  secretName: wikipulse-root-ca
+  duration: "87600h"
+  renewBefore: "720h"
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    rotationPolicy: Never
+  subject:
+    organizations:
+      - WikiPulse
+    organizationalUnits:
+      - Platform Security
+  usages:
+    - cert sign
+    - crl sign
+  issuerRef:
+    name: selfsigned-root
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: wikipulse-root-ca
+spec:
+  ca:
+    secretName: wikipulse-root-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wikipulse-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: "WikiPulse Internal CA"
+  secretName: wikipulse-ca
+  duration: "43800h"
+  renewBefore: "720h"
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    rotationPolicy: Always
+  subject:
+    organizations:
+      - WikiPulse
+    organizationalUnits:
+      - Internal Services
+  usages:
+    - cert sign
+    - crl sign
+  issuerRef:
+    name: wikipulse-root-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: wikipulse-ca
+spec:
+  ca:
+    secretName: wikipulse-ca

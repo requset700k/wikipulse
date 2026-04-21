@@ -1,0 +1,10 @@
+---
+cert_manager_release_name: cert-manager
+cert_manager_namespace: cert-manager
+cert_manager_chart_ref: oci://quay.io/jetstack/charts/cert-manager
+cert_manager_chart_version: "v1.20.2"
+
+cert_manager_kubeconfig: /home/ubuntu/.kube/config
+cert_manager_values_path: /home/ubuntu/cert-manager-values.yaml
+cert_manager_namespace_manifest_path: /home/ubuntu/cert-manager-namespace.yaml
+cert_manager_pki_bootstrap_path: /home/ubuntu/cert-manager-pki-bootstrap.yaml
