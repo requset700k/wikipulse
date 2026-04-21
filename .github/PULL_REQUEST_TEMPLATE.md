@@ -1,11 +1,14 @@
 <!--
-PR 제목 규칙 (Conventional Commits):
+PR 제목 규칙 (Conventional Commits) — 이 PR은 Squash-merge 되므로 **PR 제목만** main 히스토리에 남습니다.
   <type>(<scope>): <subject>
   type:  feat | fix | refactor | perf | docs | test | chore | ci | build | revert | security
   scope: infra | k8s | terraform | ansible | gitops | kafka | airflow | dbt | nlp | llm | api | web | obs | sec | dr | data
   예) feat(kafka): reddit-comments 토픽 파티션 12개로 증설
       fix(nlp): DistilBERT consumer OOM 재현 수정
       security(vault): Gemini API key 로테이션 정책 적용
+
+main 동기화는 **rebase 권장** (`git fetch origin main && git rebase origin/main && git push --force-with-lease`).
+머지 커밋을 브랜치에 만들지 마세요 — Squash 이후에도 중간 히스토리가 지저분해집니다.
 -->
 
 ## 1. 변경 요약
