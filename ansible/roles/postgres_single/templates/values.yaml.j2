@@ -7,6 +7,22 @@ auth:
   database: "{{ postgres_single_database }}"
 
 primary:
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    capabilities:
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
   persistence:
     enabled: true
     storageClass: "{{ postgres_single_storage_class }}"

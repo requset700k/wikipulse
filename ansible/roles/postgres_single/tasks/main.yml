@@ -11,6 +11,7 @@
   ansible.builtin.assert:
     that:
       - postgres_single_chart_ref | length > 0
+      - postgres_single_chart_version | length > 0
       - postgres_single_password | trim | length >= 16
       - postgres_single_password is match('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$')
       - postgres_single_password != "change-me-keycloak-db-password"
@@ -48,7 +49,7 @@
       kubernetes.core.helm:
         name: "{{ postgres_single_release_name }}"
         chart_ref: "{{ postgres_single_chart_ref }}"
-        chart_version: "{{ postgres_single_chart_version | default(omit, true) }}"
+        chart_version: "{{ postgres_single_chart_version }}"
         release_namespace: "{{ postgres_single_namespace }}"
         create_namespace: false
         values_files:

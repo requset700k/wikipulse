@@ -2,7 +2,7 @@
 postgres_single_namespace: keycloak
 postgres_single_release_name: keycloak-db
 postgres_single_chart_ref: oci://registry-1.docker.io/bitnamicharts/postgresql
-postgres_single_chart_version: ""
+postgres_single_chart_version: "18.6.1"
 postgres_single_kubeconfig: /home/ubuntu/.kube/config
 
 postgres_single_values_path: /home/ubuntu/keycloak-postgresql-values.yaml
