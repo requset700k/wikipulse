@@ -1,0 +1,18 @@
+---
+postgres_single_namespace: keycloak
+postgres_single_release_name: keycloak-db
+postgres_single_chart_ref: oci://registry-1.docker.io/bitnamicharts/postgresql
+postgres_single_chart_version: ""
+postgres_single_kubeconfig: /home/ubuntu/.kube/config
+
+postgres_single_values_path: /home/ubuntu/keycloak-postgresql-values.yaml
+
+postgres_single_storage_class: longhorn
+postgres_single_storage_size: 20Gi
+
+postgres_single_database: keycloak
+postgres_single_username: keycloak
+postgres_single_password: ""
+
+postgres_single_db_secret_name: keycloak-db-credentials
+postgres_single_service_name: "{{ postgres_single_release_name }}-postgresql"

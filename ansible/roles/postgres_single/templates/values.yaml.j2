@@ -1,0 +1,20 @@
+---
+architecture: standalone
+
+auth:
+  username: "{{ postgres_single_username }}"
+  password: "{{ postgres_single_password }}"
+  database: "{{ postgres_single_database }}"
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: "{{ postgres_single_storage_class }}"
+    size: "{{ postgres_single_storage_size }}"
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi

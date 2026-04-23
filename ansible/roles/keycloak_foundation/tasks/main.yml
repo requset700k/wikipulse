@@ -12,9 +12,33 @@
   ansible.builtin.set_fact:
     keycloak_foundation_crd_served_versions: "{{ keycloak_foundation_crd_versions_raw.stdout.split() }}"
 
+- name: Build keycloak CR version candidates
+  ansible.builtin.set_fact:
+    keycloak_foundation_cr_version_candidates: >-
+      {{ ([keycloak_foundation_cr_version_preferred] + keycloak_foundation_cr_version_fallbacks) | unique }}
+
 - name: Select keycloak CR version
   ansible.builtin.set_fact:
-    keycloak_foundation_cr_version_selected: "{{ keycloak_foundation_cr_version_override if keycloak_foundation_cr_version_override | length > 0 else (keycloak_foundation_cr_version_preferred if keycloak_foundation_cr_version_preferred in keycloak_foundation_crd_served_versions else keycloak_foundation_crd_served_versions[0]) }}"
+    keycloak_foundation_cr_version_selected: >-
+      {{
+        keycloak_foundation_cr_version_override
+        if keycloak_foundation_cr_version_override | length > 0
+        else (
+          (
+            keycloak_foundation_cr_version_candidates
+            | select('in', keycloak_foundation_crd_served_versions)
+            | list
+            | first
+          )
+          if (
+            keycloak_foundation_cr_version_candidates
+            | select('in', keycloak_foundation_crd_served_versions)
+            | list
+            | length > 0
+          )
+          else keycloak_foundation_crd_served_versions[0]
+        )
+      }}
 
 - name: Validate selected keycloak CR version is served by cluster
   ansible.builtin.assert:

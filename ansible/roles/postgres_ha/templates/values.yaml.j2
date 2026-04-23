@@ -9,7 +9,7 @@ global:
 postgresql:
   replicaCount: {{ postgres_ha_postgresql_replicas }}
   podManagementPolicy: Parallel
-  podAntiAffinityPreset: soft
+  podAntiAffinityPreset: hard
   persistence:
     enabled: true
     storageClass: "{{ postgres_ha_storage_class }}"
@@ -24,7 +24,7 @@ postgresql:
 
 pgpool:
   replicaCount: {{ postgres_ha_pgpool_replicas }}
-  podAntiAffinityPreset: soft
+  podAntiAffinityPreset: hard
   adminPassword: "{{ postgres_ha_pgpool_admin_password }}"
   resources:
     requests:

@@ -1,14 +1,16 @@
 ---
-# Phase 7: Keycloak Operator + Postgres HA foundation
+# Phase 7: Keycloak Operator + Postgres foundation
 # run: make keycloak-foundation-up
 # prerequisite: cert-manager-up completed
 
-- name: Keycloak foundation (operator + postgres ha + internal keycloak)
+- name: Keycloak foundation (operator + postgres single + internal keycloak)
   hosts: control_plane[0]
   become: true
   gather_facts: true
 
   roles:
     - role: keycloak_operator
-    - role: postgres_ha
+    # Default for this project scope: single Postgres.
+    # Keep postgres_ha role for later expansion when HA is required.
+    - role: postgres_single
     - role: keycloak_foundation
