@@ -1,0 +1,87 @@
+---
+- name: Install python dependencies for kubernetes.core modules
+  ansible.builtin.apt:
+    name:
+      - python3-kubernetes
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: Copy keycloak namespace manifest to control plane host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../infra/kubernetes/keycloak/namespace.yaml"
+    dest: "{{ keycloak_operator_namespace_manifest_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Apply keycloak namespace with pod security labels
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    apply -f {{ keycloak_operator_namespace_manifest_path }}
+  register: keycloak_namespace_apply
+  changed_when: >-
+    "created" in keycloak_namespace_apply.stdout
+    or "configured" in keycloak_namespace_apply.stdout
+  become_user: ubuntu
+
+- name: Apply Keycloak CRDs (Keycloak)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    apply -f {{ keycloak_operator_crds_manifest_url }}
+  register: keycloak_crd_apply
+  changed_when: >-
+    "created" in keycloak_crd_apply.stdout
+    or "configured" in keycloak_crd_apply.stdout
+  become_user: ubuntu
+
+- name: Apply Keycloak CRDs (KeycloakRealmImport)
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    apply -f {{ keycloak_operator_realmimports_manifest_url }}
+  register: keycloak_realmimport_crd_apply
+  changed_when: >-
+    "created" in keycloak_realmimport_crd_apply.stdout
+    or "configured" in keycloak_realmimport_crd_apply.stdout
+  become_user: ubuntu
+
+- name: Wait until keycloak CRD is established
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    wait --for=condition=Established crd/keycloaks.k8s.keycloak.org --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait until keycloakrealmimport CRD is established
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    wait --for=condition=Established crd/keycloakrealmimports.k8s.keycloak.org --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Install Keycloak Operator in keycloak namespace
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    -n {{ keycloak_operator_namespace }}
+    apply -f {{ keycloak_operator_deployment_manifest_url }}
+  register: keycloak_operator_apply
+  changed_when: >-
+    "created" in keycloak_operator_apply.stdout
+    or "configured" in keycloak_operator_apply.stdout
+  become_user: ubuntu
+
+- name: Wait for keycloak-operator deployment rollout
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    -n {{ keycloak_operator_namespace }}
+    rollout status deployment/keycloak-operator --timeout=5m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Print keycloak operator summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_operator_kubeconfig }}
+    -n {{ keycloak_operator_namespace }}
+    get deploy,pods
+  changed_when: false
+  become_user: ubuntu

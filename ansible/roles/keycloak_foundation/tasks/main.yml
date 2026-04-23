@@ -1,0 +1,98 @@
+---
+- name: Get served versions for keycloak CRD
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    get crd keycloaks.k8s.keycloak.org
+    -o jsonpath={range .spec.versions[?(@.served==true)]}{.name}{" "}{end}
+  register: keycloak_foundation_crd_versions_raw
+  changed_when: false
+  become_user: ubuntu
+
+- name: Parse keycloak CRD served versions
+  ansible.builtin.set_fact:
+    keycloak_foundation_crd_served_versions: "{{ keycloak_foundation_crd_versions_raw.stdout.split() }}"
+
+- name: Build keycloak CR version candidates
+  ansible.builtin.set_fact:
+    keycloak_foundation_cr_version_candidates: >-
+      {{ ([keycloak_foundation_cr_version_preferred] + keycloak_foundation_cr_version_fallbacks) | unique }}
+
+- name: Select keycloak CR version
+  ansible.builtin.set_fact:
+    keycloak_foundation_cr_version_selected: >-
+      {{
+        keycloak_foundation_cr_version_override
+        if keycloak_foundation_cr_version_override | length > 0
+        else (
+          (
+            keycloak_foundation_cr_version_candidates
+            | select('in', keycloak_foundation_crd_served_versions)
+            | list
+            | first
+          )
+          if (
+            keycloak_foundation_cr_version_candidates
+            | select('in', keycloak_foundation_crd_served_versions)
+            | list
+            | length > 0
+          )
+          else keycloak_foundation_crd_served_versions[0]
+        )
+      }}
+
+- name: Validate selected keycloak CR version is served by cluster
+  ansible.builtin.assert:
+    that:
+      - keycloak_foundation_crd_served_versions | length > 0
+      - keycloak_foundation_cr_version_selected in keycloak_foundation_crd_served_versions
+    fail_msg: >-
+      Requested Keycloak CR version is not served.
+      served={{ keycloak_foundation_crd_served_versions }},
+      selected={{ keycloak_foundation_cr_version_selected }}
+
+- name: Render keycloak foundation manifest
+  ansible.builtin.template:
+    src: keycloak.yaml.j2
+    dest: "{{ keycloak_foundation_manifest_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Apply keycloak foundation manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    apply -f {{ keycloak_foundation_manifest_path }}
+  register: keycloak_foundation_apply
+  changed_when: >-
+    "created" in keycloak_foundation_apply.stdout
+    or "configured" in keycloak_foundation_apply.stdout
+  become_user: ubuntu
+
+- name: Wait for keycloak custom resource to be Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    -n {{ keycloak_foundation_namespace }}
+    wait --for=condition=Ready keycloak/{{ keycloak_foundation_name }} --timeout=15m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait until keycloak service is created
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    -n {{ keycloak_foundation_namespace }}
+    get svc {{ keycloak_foundation_service_name }}
+    -o jsonpath={.spec.clusterIP}
+  register: keycloak_service_ip
+  changed_when: false
+  retries: 10
+  delay: 6
+  until: keycloak_service_ip.stdout | length > 0
+  become_user: ubuntu
+
+- name: Print keycloak foundation summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    -n {{ keycloak_foundation_namespace }}
+    get keycloak,pods,svc
+  changed_when: false
+  become_user: ubuntu

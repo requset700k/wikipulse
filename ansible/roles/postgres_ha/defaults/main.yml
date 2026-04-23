@@ -1,0 +1,22 @@
+---
+postgres_ha_namespace: keycloak
+postgres_ha_release_name: keycloak-db
+postgres_ha_chart_ref: oci://registry-1.docker.io/bitnamicharts/postgresql-ha
+postgres_ha_chart_version: "16.3.2"
+postgres_ha_kubeconfig: /home/ubuntu/.kube/config
+
+postgres_ha_values_path: /home/ubuntu/keycloak-postgresql-ha-values.yaml
+
+postgres_ha_postgresql_replicas: 3
+postgres_ha_pgpool_replicas: 2
+postgres_ha_storage_class: longhorn
+postgres_ha_storage_size: 20Gi
+
+postgres_ha_database: keycloak
+postgres_ha_username: keycloak
+postgres_ha_password: ""
+postgres_ha_repmgr_password: ""
+postgres_ha_pgpool_admin_password: ""
+
+postgres_ha_db_secret_name: keycloak-db-credentials
+postgres_ha_service_name: "{{ postgres_ha_release_name }}-postgresql-ha-pgpool"

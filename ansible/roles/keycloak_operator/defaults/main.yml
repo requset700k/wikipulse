@@ -1,0 +1,13 @@
+---
+keycloak_operator_namespace: keycloak
+keycloak_operator_kubeconfig: /home/ubuntu/.kube/config
+keycloak_operator_version: "26.6.1"
+
+keycloak_operator_namespace_manifest_path: /home/ubuntu/keycloak-namespace.yaml
+
+keycloak_operator_crds_manifest_url: >-
+  https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ keycloak_operator_version }}/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+keycloak_operator_realmimports_manifest_url: >-
+  https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ keycloak_operator_version }}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+keycloak_operator_deployment_manifest_url: >-
+  https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{ keycloak_operator_version }}/kubernetes/kubernetes.yml

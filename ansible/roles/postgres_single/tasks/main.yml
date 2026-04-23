@@ -1,0 +1,115 @@
+---
+- name: Install python dependencies for kubernetes.core modules
+  ansible.builtin.apt:
+    name:
+      - python3-kubernetes
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: Validate required postgres-single configuration
+  ansible.builtin.assert:
+    that:
+      - postgres_single_chart_ref | length > 0
+      - postgres_single_chart_version | length > 0
+      - postgres_single_password | trim | length >= 16
+      - postgres_single_password is match('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$')
+      - postgres_single_password != "change-me-keycloak-db-password"
+    fail_msg: >-
+      postgres_single secrets are not configured securely.
+      Provide secrets via encrypted vars file (Ansible Vault), not plaintext -e values.
+  no_log: true
+
+- name: Check whether helm is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: postgres_single_helm_bin
+
+- name: Install helm 3 when missing
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    executable: /bin/bash
+  when: not postgres_single_helm_bin.stat.exists
+  changed_when: true
+
+- name: Deploy postgres-single with temporary values file
+  block:
+    - name: Render postgres-single values file
+      ansible.builtin.template:
+        src: values.yaml.j2
+        dest: "{{ postgres_single_values_path }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+      no_log: true
+
+    - name: Install or upgrade postgres-single chart
+      kubernetes.core.helm:
+        name: "{{ postgres_single_release_name }}"
+        chart_ref: "{{ postgres_single_chart_ref }}"
+        chart_version: "{{ postgres_single_chart_version }}"
+        release_namespace: "{{ postgres_single_namespace }}"
+        create_namespace: false
+        values_files:
+          - "{{ postgres_single_values_path }}"
+        wait: true
+        wait_timeout: 15m
+      become_user: ubuntu
+      environment:
+        KUBECONFIG: "{{ postgres_single_kubeconfig }}"
+      no_log: true
+
+    - name: Wait for postgres-single statefulset rollout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ postgres_single_kubeconfig }}
+        -n {{ postgres_single_namespace }}
+        rollout status statefulset/{{ postgres_single_release_name }}-postgresql --timeout=10m
+      changed_when: false
+      become_user: ubuntu
+
+    - name: Wait until postgres-single service has a ClusterIP
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ postgres_single_kubeconfig }}
+        -n {{ postgres_single_namespace }}
+        get svc {{ postgres_single_service_name }}
+        -o jsonpath={.spec.clusterIP}
+      register: postgres_single_cluster_ip
+      changed_when: false
+      retries: 10
+      delay: 6
+      until: postgres_single_cluster_ip.stdout | length > 0
+      become_user: ubuntu
+  always:
+    - name: Remove temporary postgres-single values file
+      ansible.builtin.file:
+        path: "{{ postgres_single_values_path }}"
+        state: absent
+
+- name: Create keycloak database credentials secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ postgres_single_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ postgres_single_db_secret_name }}"
+        namespace: "{{ postgres_single_namespace }}"
+      type: Opaque
+      stringData:
+        username: "{{ postgres_single_username }}"
+        password: "{{ postgres_single_password }}"
+        database: "{{ postgres_single_database }}"
+        host: "{{ postgres_single_service_name }}"
+        port: "5432"
+  no_log: true
+
+- name: Print postgres-single summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ postgres_single_kubeconfig }}
+    -n {{ postgres_single_namespace }}
+    get pods,svc,pvc
+  changed_when: false
+  become_user: ubuntu

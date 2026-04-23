@@ -1,0 +1,131 @@
+---
+- name: Install python dependencies for kubernetes.core modules
+  ansible.builtin.apt:
+    name:
+      - python3-kubernetes
+      - python3-yaml
+    state: present
+    update_cache: true
+
+- name: Validate required postgres-ha configuration
+  ansible.builtin.assert:
+    that:
+      - postgres_ha_chart_version | length > 0
+      - postgres_ha_password | trim | length >= 16
+      - postgres_ha_repmgr_password | trim | length >= 16
+      - postgres_ha_pgpool_admin_password | trim | length >= 16
+      - postgres_ha_password is match('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$')
+      - postgres_ha_repmgr_password is match('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$')
+      - postgres_ha_pgpool_admin_password is match('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$')
+      - postgres_ha_password != postgres_ha_repmgr_password
+      - postgres_ha_password != postgres_ha_pgpool_admin_password
+      - postgres_ha_repmgr_password != postgres_ha_pgpool_admin_password
+      - postgres_ha_password != "change-me-keycloak-db-password"
+      - postgres_ha_repmgr_password != "change-me-repmgr-password"
+      - postgres_ha_pgpool_admin_password != "change-me-pgpool-admin-password"
+    fail_msg: >-
+      postgres_ha secrets/chart version are not configured securely.
+      Provide secrets via encrypted vars file (Ansible Vault), not plaintext -e values.
+  no_log: true
+
+- name: Check whether helm is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/helm
+  register: postgres_ha_helm_bin
+
+- name: Install helm 3 when missing
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    executable: /bin/bash
+  when: not postgres_ha_helm_bin.stat.exists
+  changed_when: true
+
+- name: Deploy postgres-ha with temporary values file
+  block:
+    - name: Render postgres-ha values file
+      ansible.builtin.template:
+        src: values.yaml.j2
+        dest: "{{ postgres_ha_values_path }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+      no_log: true
+
+    - name: Install or upgrade postgres-ha chart
+      kubernetes.core.helm:
+        name: "{{ postgres_ha_release_name }}"
+        chart_ref: "{{ postgres_ha_chart_ref }}"
+        chart_version: "{{ postgres_ha_chart_version }}"
+        release_namespace: "{{ postgres_ha_namespace }}"
+        create_namespace: false
+        values_files:
+          - "{{ postgres_ha_values_path }}"
+        wait: true
+        wait_timeout: 15m
+      become_user: ubuntu
+      environment:
+        KUBECONFIG: "{{ postgres_ha_kubeconfig }}"
+      no_log: true
+
+    - name: Wait for postgres-ha statefulset rollout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ postgres_ha_kubeconfig }}
+        -n {{ postgres_ha_namespace }}
+        rollout status statefulset/{{ postgres_ha_release_name }}-postgresql-ha-postgresql --timeout=10m
+      changed_when: false
+      become_user: ubuntu
+
+    - name: Wait for postgres-ha pgpool deployment rollout
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ postgres_ha_kubeconfig }}
+        -n {{ postgres_ha_namespace }}
+        rollout status deployment/{{ postgres_ha_release_name }}-postgresql-ha-pgpool --timeout=10m
+      changed_when: false
+      become_user: ubuntu
+
+    - name: Wait until pgpool service has a ClusterIP
+      ansible.builtin.command: >-
+        kubectl --kubeconfig={{ postgres_ha_kubeconfig }}
+        -n {{ postgres_ha_namespace }}
+        get svc {{ postgres_ha_service_name }}
+        -o jsonpath={.spec.clusterIP}
+      register: postgres_ha_cluster_ip
+      changed_when: false
+      retries: 10
+      delay: 6
+      until: postgres_ha_cluster_ip.stdout | length > 0
+      become_user: ubuntu
+  always:
+    - name: Remove temporary postgres-ha values file
+      ansible.builtin.file:
+        path: "{{ postgres_ha_values_path }}"
+        state: absent
+
+- name: Create keycloak database credentials secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ postgres_ha_kubeconfig }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ postgres_ha_db_secret_name }}"
+        namespace: "{{ postgres_ha_namespace }}"
+      type: Opaque
+      stringData:
+        username: "{{ postgres_ha_username }}"
+        password: "{{ postgres_ha_password }}"
+        database: "{{ postgres_ha_database }}"
+        host: "{{ postgres_ha_service_name }}"
+        port: "5432"
+  no_log: true
+
+- name: Print postgres-ha summary
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ postgres_ha_kubeconfig }}
+    -n {{ postgres_ha_namespace }}
+    get pods,svc,pvc
+  changed_when: false
+  become_user: ubuntu
