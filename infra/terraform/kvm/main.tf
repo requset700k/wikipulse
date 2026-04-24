@@ -37,6 +37,10 @@ resource "libvirt_cloudinit_disk" "ci" {
   name = "${var.cluster_name}-${each.key}-ci.iso"
   pool = libvirt_pool.wp.name
 
+  # NoCloud datasource 는 meta-data 에 instance-id 가 없으면 user-data 전체를 무시함.
+  # dmacvicar/libvirt 0.9.x 부터 meta_data 를 명시적으로 주지 않으면 비어있는 상태로 생성됨.
+  meta_data = "instance-id: ${each.key}\nlocal-hostname: ${each.key}\n"
+
   user_data = templatefile("${path.module}/cloud-init/user-data.yaml.tftpl", {
     hostname           = each.key
     fqdn               = "${each.key}.${var.cluster_name}.local"
