@@ -16,6 +16,6 @@ argocd_loadbalancer_ip: ""
 
 # App-of-Apps 루트 Application 을 이 역할에서 같이 적용할지 여부.
 argocd_apply_root_app: true
-argocd_root_app_repo: https://github.com/requset700k/wikipulse.git
+argocd_root_app_repo: https://github.com/requset700k/cledyu.git
 argocd_root_app_revision: main
 argocd_root_app_path: gitops/argocd/apps

@@ -4,6 +4,7 @@ control_plane_vip: 10.10.0.10
 control_plane_port: 6443
 pod_cidr: 10.42.0.0/16
 service_cidr: 10.43.0.0/16
-cluster_name: wikipulse
+# kubeadm 클러스터 이름. kubeconfig context / kube-vip manifest / cilium_cluster_name과 일치해야 함.
+cluster_name: cledyu
 # Cilium 이 kube-proxy 대체(Phase 3) 하므로 애드온 단계에서 건너뛴다.
 skip_phases: "addon/kube-proxy"

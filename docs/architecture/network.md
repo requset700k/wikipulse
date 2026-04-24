@@ -6,7 +6,7 @@
 ┌──────────────────────────────────────────────────────────┐
 │ 온프레미스 호스트 (Ubuntu 22.04, 32C/128GB)                │
 │                                                          │
-│   libvirt NAT 네트워크: wpbr0 (10.10.0.0/24)              │
+│   libvirt NAT 네트워크: cledyubr0 (10.10.0.0/24)          │
 │   ├─ cp01  10.10.0.11   (control-plane + worker)         │
 │   ├─ cp02  10.10.0.12   (control-plane + worker)         │
 │   └─ cp03  10.10.0.13   (control-plane + worker)         │
@@ -25,7 +25,7 @@
 | 항목                   | 값                        | 비고                                   |
 | ---------------------- | ------------------------- | -------------------------------------- |
 | 호스트 물리 LAN        | (호스트 기본값 유지)      | 호스트가 NAT 게이트웨이 역할           |
-| libvirt bridge         | `wpbr0`                   | NAT, dnsmasq DHCP 비활성(고정 IP 사용) |
+| libvirt bridge         | `cledyubr0`               | NAT, dnsmasq DHCP 비활성(고정 IP 사용) |
 | VM 네트워크            | `10.10.0.0/24`            | libvirt NAT 대역                       |
 | 게이트웨이             | `10.10.0.1`               | libvirt가 자동 할당(호스트 인터페이스) |
 | cp01 / cp02 / cp03     | `10.10.0.11/.12/.13`      | 고정 IP, cloud-init에서 주입           |
@@ -36,9 +36,10 @@
 | Tailscale tailnet      | `100.64.0.0/10`           | 자동 할당, MagicDNS 사용               |
 
 ## 인바운드/아웃바운드 원칙
-- **북-남 트래픽**: 외부 유저는 CloudFront → (향후 퍼블릭 도메인/Tailscale Funnel) → MetalLB VIP로 진입.
+- **북-남 트래픽**: 외부 유저는 CloudFront + WAF → Tailscale Funnel → 온프렘 Kong Gateway → Cilium 서비스 메시 → KubeVirt Lab VM 또는 EC2 오버플로우 Lab VM.
 - **컨트롤플레인 접근**: Tailscale을 통해서만 `10.10.0.10:6443` 노출. ACL로 김용균/윤승호 제한.
-- **크로스 클라우드**: 온프렘 ↔ AWS는 Tailscale subnet router(추후 AWS EC2에 설치)로 연결. 데이터 레이어만 HTTPS로 S3/BigQuery 접근.
+- **크로스 클라우드**: 온프렘 ↔ AWS는 Tailscale subnet router로 연결. Lab VM이 EC2로 오버플로우될 때도 동일 tailnet 경로 사용. 데이터 레이어(S3/BigQuery)는 HTTPS 직접 접근.
+- **수강생 VM 격리**: KubeVirt NetworkAttachmentDefinition(온프렘) + VPC Subnet/Security Group(EC2)로 VM 간 통신 차단, egress는 허용 도메인만.
 - **DNS**: 내부는 MagicDNS(`*.tailnet.ts.net`), 외부용 Route 53은 퍼블릭 도메인 발급 이후 추가.
 
 ## 포트 체계

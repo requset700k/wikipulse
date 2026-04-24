@@ -1,4 +1,4 @@
-# Python 전반(데이터 파이프라인, AI 서비스, FastAPI) 공용 품질 설정
+# Python 전반(AI BFF, RAG 파이프라인, Validation 스크립트) 공용 품질 설정
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -37,7 +37,7 @@ ignore = [
 "**/notebooks/**" = ["T20", "E402", "F401"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["wikipulse"]
+known-first-party = ["cledyu"]
 
 [tool.ruff.format]
 quote-style = "double"

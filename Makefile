@@ -21,7 +21,7 @@ help: ## 사용 가능한 명령 목록
 # 가 단일 소스로 inventory / roles / collections 를 해결하므로 cd 가 필요 없음.
 
 # ────── Phase 1: 호스트 / VM 프로비저닝 ──────
-host-prep: ## 원격 호스트에 libvirt + wpbr0 NAT 네트워크 설치 (HOST=<ip> 필수)
+host-prep: ## 원격 호스트에 libvirt + cledyubr0 NAT 네트워크 설치 (HOST=<ip> 필수)
 	@test -n "$(HOST)" || (echo "HOST=<ip> 를 지정하세요" && exit 1)
 	ansible-playbook -i "$(HOST_USER)@$(HOST)," $(ANSIBLE_DIR)/playbooks/00-host-prep.yml
 

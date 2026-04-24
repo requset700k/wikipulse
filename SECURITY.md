@@ -1,7 +1,8 @@
 # 보안 정책
 
-WikiPulse는 Wikipedia SSE · Reddit OAuth2 · Gemini API · Vault 관리 시크릿을 다루므로
-취약점은 **공개 이슈로 먼저 보고하지 말아 주세요**.
+Cledyu는 멀티테넌트 Lab VM(수강생이 root 권한 보유) · Gemini API · Keycloak SSO ·
+Vault 관리 시크릿 · KT Cloud 사내 문서(RAG) 를 다루므로 취약점은
+**공개 이슈로 먼저 보고하지 말아 주세요**.
 
 ## 신고 경로 (우선순위 순)
 

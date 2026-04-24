@@ -6,7 +6,7 @@ metallb_chart_version: "0.14.9"
 metallb_namespace: metallb-system
 metallb_release_name: metallb
 
-# wpbr0 서브넷(10.10.0.0/24) 중 VM/VIP 와 겹치지 않는 대역을 LB 풀로 할당.
+# cledyubr0 서브넷(10.10.0.0/24) 중 VM/VIP 와 겹치지 않는 대역을 LB 풀로 할당.
 #   - Gateway:     10.10.0.1
 #   - VIP:         10.10.0.10
 #   - VMs:         10.10.0.11~13

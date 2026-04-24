@@ -1,36 +1,36 @@
 ---
-# wpbr0 이라는 NAT 기반 libvirt 네트워크 생성.
+# cledyubr0 이라는 NAT 기반 libvirt 네트워크 생성.
 # DHCP 는 끄고 Terraform이 cloud-init 으로 고정 IP를 주입한다.
 
-- name: wpbr0 네트워크 정의 XML 생성
+- name: libvirt 네트워크 정의 XML 생성
   ansible.builtin.copy:
-    dest: /tmp/wpbr0-net.xml
+    dest: /tmp/{{ br_name }}-net.xml
     mode: "0644"
     content: |
       <network>
-        <name>{{ wpbr_name }}</name>
+        <name>{{ br_name }}</name>
         <forward mode='nat'/>
-        <bridge name='{{ wpbr_name }}' stp='on' delay='0'/>
-        <ip address='{{ wpbr_gateway }}' netmask='255.255.255.0'>
+        <bridge name='{{ br_name }}' stp='on' delay='0'/>
+        <ip address='{{ br_gateway }}' netmask='255.255.255.0'>
           <!-- DHCP 비활성: Terraform/cloud-init 으로 고정 IP 주입 -->
         </ip>
       </network>
 
-- name: 기존 wpbr0 네트워크 여부 확인
-  ansible.builtin.command: virsh net-info {{ wpbr_name }}
-  register: wpbr_info
+- name: 기존 libvirt 네트워크 여부 확인
+  ansible.builtin.command: virsh net-info {{ br_name }}
+  register: br_info
   changed_when: false
   failed_when: false
 
-- name: wpbr0 네트워크 정의
-  ansible.builtin.command: virsh net-define /tmp/wpbr0-net.xml
-  when: wpbr_info.rc != 0
+- name: libvirt 네트워크 정의
+  ansible.builtin.command: virsh net-define /tmp/{{ br_name }}-net.xml
+  when: br_info.rc != 0
 
-- name: wpbr0 자동 시작 + 활성화
+- name: libvirt 네트워크 자동 시작 + 활성화
   ansible.builtin.shell: |
     set -e
-    virsh net-autostart {{ wpbr_name }} || true
-    virsh net-start     {{ wpbr_name }} || true
+    virsh net-autostart {{ br_name }} || true
+    virsh net-start     {{ br_name }} || true
   args:
     executable: /bin/bash
   register: net_start

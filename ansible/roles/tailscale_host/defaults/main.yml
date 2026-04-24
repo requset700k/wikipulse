@@ -5,7 +5,7 @@
 
 tailscale_hostname: request700k-host
 
-# 광고할 서브넷 목록. wpbr0 (10.10.0.0/24) 만 내보내면 VM/VIP/LB IP 접근 가능.
+# 광고할 서브넷 목록. cledyubr0 (10.10.0.0/24) 만 내보내면 VM/VIP/LB IP 접근 가능.
 # pod/service CIDR 은 호스트에서 라우팅 불가 — 필요 시 in-cluster subnet router 별도 구축.
 tailscale_advertised_routes:
   - "10.10.0.0/24"

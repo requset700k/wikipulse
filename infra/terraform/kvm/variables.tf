@@ -5,9 +5,9 @@ variable "libvirt_uri" {
 }
 
 variable "network_name" {
-  description = "사용할 libvirt 네트워크 이름(Ansible이 wpbr0로 생성)"
+  description = "사용할 libvirt 네트워크 이름(Ansible이 cledyubr0로 생성)"
   type        = string
-  default     = "wpbr0"
+  default     = "cledyubr0"
 }
 
 variable "base_image_source" {
@@ -19,7 +19,7 @@ variable "base_image_source" {
 variable "images_pool_path" {
   description = "VM 디스크가 저장될 디렉토리 (default libvirt 풀과 충돌 방지를 위해 하위 디렉토리 사용)"
   type        = string
-  default     = "/var/lib/libvirt/images/wikipulse"
+  default     = "/var/lib/libvirt/images/cledyu"
 }
 
 variable "ssh_authorized_key" {
@@ -29,9 +29,9 @@ variable "ssh_authorized_key" {
 }
 
 variable "cluster_name" {
-  description = "클러스터 이름 prefix"
+  description = "클러스터 이름 prefix. VM·pool·disk 이름이 여기서 파생됨."
   type        = string
-  default     = "wikipulse"
+  default     = "cledyu"
 }
 
 variable "dns_servers" {

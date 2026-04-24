@@ -16,7 +16,8 @@ cilium_service_cidr: "10.43.0.0/16"
 cilium_k8s_service_host: "10.10.0.10"
 cilium_k8s_service_port: 6443
 
-cilium_cluster_name: wikipulse
+# Cilium cluster identifier. kubeadm cluster_name과 반드시 일치시켜야 ClusterMesh가 정상 동작.
+cilium_cluster_name: cledyu
 
 # control-plane taint 해제 여부 (3노드를 워커 겸용으로 사용)
 cilium_untaint_control_plane: true

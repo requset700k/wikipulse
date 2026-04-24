@@ -27,6 +27,7 @@
     groups: libvirt,kvm
     append: true
 
+# Terraform images_pool_path (infra/terraform/kvm/variables.tf) 와 일치해야 pool 이 정상 마운트됨.
 - name: 이미지/베이스 디렉토리 준비
   ansible.builtin.file:
     path: "{{ item }}"
@@ -36,7 +37,7 @@
     mode: "0775"
   loop:
     - /var/lib/libvirt/images
-    - /var/lib/libvirt/images/wikipulse
+    - /var/lib/libvirt/images/cledyu
 
 # dmacvicar/libvirt provider가 qcow2 backing chain 을 XML 에 명시하지 않아
 # virt-aa-helper 가 base qcow2 를 AppArmor 프로파일에 못 넣어 VM 시작 실패.

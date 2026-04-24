@@ -1,5 +1,5 @@
 ---
-# Phase 1-A: 베어메탈 호스트에 libvirt/KVM 스택 설치 + wpbr0 NAT 네트워크 생성
+# Phase 1-A: 베어메탈 호스트에 libvirt/KVM 스택 설치 + cledyubr0 NAT 네트워크 생성
 # 실행: make host-prep HOST=<호스트-IP>
 
 - name: 온프레미스 호스트에 libvirt/KVM 준비
@@ -7,11 +7,11 @@
   become: true
   gather_facts: true
   vars:
-    wpbr_name: wpbr0
-    wpbr_cidr: 10.10.0.0/24
-    wpbr_gateway: 10.10.0.1
-    wpbr_dhcp_start: 10.10.0.100
-    wpbr_dhcp_end: 10.10.0.199
+    br_name: cledyubr0
+    br_cidr: 10.10.0.0/24
+    br_gateway: 10.10.0.1
+    br_dhcp_start: 10.10.0.100
+    br_dhcp_end: 10.10.0.199
     images_pool_path: /var/lib/libvirt/images
     # 베이스 이미지는 Terraform provider 가 직접 URL 에서 받아 pool 에 업로드 (Ansible 는 디렉토리만 준비)
 
