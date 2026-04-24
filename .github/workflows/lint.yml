@@ -80,6 +80,17 @@ jobs:
         run: pip install pre-commit
 
       - name: Run pre-commit (skip ruff, delegated to ci-lint.yml)
+        # PR: base..HEAD 변경 파일만 검사 → 기존 레거시 위반이 신규 PR 을 막지 않음.
+        # main push / workflow_dispatch: --all-files 로 전체 품질 게이트 유지.
         env:
           SKIP: ruff,ruff-format
-        run: pre-commit run --all-files --show-diff-on-failure
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            pre-commit run \
+              --from-ref "origin/${{ github.base_ref }}" \
+              --to-ref HEAD \
+              --show-diff-on-failure
+          else
+            pre-commit run --all-files --show-diff-on-failure
+          fi
