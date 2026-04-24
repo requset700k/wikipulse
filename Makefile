@@ -77,7 +77,7 @@ argocd-url: ## ArgoCD LB IP 출력 (http://<ip> 로 접속)
 		"kubectl -n argocd get svc argocd-server -o jsonpath={.status.loadBalancer.ingress[0].ip}" \
 		| awk '{print "http://"$$0}'
 
-cert-manager-up: ## cert-manager install + WikiPulse internal CA bootstrap
+cert-manager-up: ## cert-manager install + Cledyu internal CA bootstrap
 	ansible-playbook $(ANSIBLE_DIR)/playbooks/31-cert-manager.yml
 
 keycloak-foundation-up: ## keycloak operator + postgres foundation (single default, vault secrets required)

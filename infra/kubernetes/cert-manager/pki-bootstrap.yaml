@@ -9,12 +9,12 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wikipulse-root-ca
+  name: cledyu-root-ca
   namespace: cert-manager
 spec:
   isCA: true
-  commonName: "WikiPulse Root CA"
-  secretName: wikipulse-root-ca
+  commonName: "Cledyu Root CA"
+  secretName: cledyu-root-ca
   duration: "87600h"
   renewBefore: "720h"
   privateKey:
@@ -23,7 +23,7 @@ spec:
     rotationPolicy: Never
   subject:
     organizations:
-      - WikiPulse
+      - Cledyu
     organizationalUnits:
       - Platform Security
   usages:
@@ -37,20 +37,20 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: wikipulse-root-ca
+  name: cledyu-root-ca
 spec:
   ca:
-    secretName: wikipulse-root-ca
+    secretName: cledyu-root-ca
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wikipulse-ca
+  name: cledyu-ca
   namespace: cert-manager
 spec:
   isCA: true
-  commonName: "WikiPulse Internal CA"
-  secretName: wikipulse-ca
+  commonName: "Cledyu Internal CA"
+  secretName: cledyu-ca
   duration: "43800h"
   renewBefore: "720h"
   privateKey:
@@ -59,21 +59,21 @@ spec:
     rotationPolicy: Always
   subject:
     organizations:
-      - WikiPulse
+      - Cledyu
     organizationalUnits:
       - Internal Services
   usages:
     - cert sign
     - crl sign
   issuerRef:
-    name: wikipulse-root-ca
+    name: cledyu-root-ca
     kind: ClusterIssuer
     group: cert-manager.io
 ---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: wikipulse-ca
+  name: cledyu-ca
 spec:
   ca:
-    secretName: wikipulse-ca
+    secretName: cledyu-ca

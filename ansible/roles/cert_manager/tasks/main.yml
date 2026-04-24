@@ -104,7 +104,7 @@
   changed_when: false
   become_user: ubuntu
 
-- name: Bootstrap selfsigned-root -> wikipulse-ca chain
+- name: Bootstrap selfsigned-root -> cledyu-ca chain
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ cert_manager_kubeconfig }}
     apply -f {{ cert_manager_pki_bootstrap_path }}
@@ -125,14 +125,14 @@
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ cert_manager_kubeconfig }}
     -n {{ cert_manager_namespace }}
-    wait --for=condition=Ready certificate/wikipulse-root-ca --timeout=3m
+    wait --for=condition=Ready certificate/cledyu-root-ca --timeout=3m
   changed_when: false
   become_user: ubuntu
 
 - name: Wait for root CA ClusterIssuer to become Ready
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ cert_manager_kubeconfig }}
-    wait --for=condition=Ready clusterissuer/wikipulse-root-ca --timeout=2m
+    wait --for=condition=Ready clusterissuer/cledyu-root-ca --timeout=2m
   changed_when: false
   become_user: ubuntu
 
@@ -140,14 +140,14 @@
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ cert_manager_kubeconfig }}
     -n {{ cert_manager_namespace }}
-    wait --for=condition=Ready certificate/wikipulse-ca --timeout=3m
+    wait --for=condition=Ready certificate/cledyu-ca --timeout=3m
   changed_when: false
   become_user: ubuntu
 
-- name: Wait for wikipulse-ca ClusterIssuer to become Ready
+- name: Wait for cledyu-ca ClusterIssuer to become Ready
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ cert_manager_kubeconfig }}
-    wait --for=condition=Ready clusterissuer/wikipulse-ca --timeout=2m
+    wait --for=condition=Ready clusterissuer/cledyu-ca --timeout=2m
   changed_when: false
   become_user: ubuntu
 
