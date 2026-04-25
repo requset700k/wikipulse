@@ -22,4 +22,5 @@ spec:
   proxy:
     headers: xforwarded
   hostname:
-    strict: false
+    hostname: "{{ keycloak_foundation_hostname }}"
+    strict: true

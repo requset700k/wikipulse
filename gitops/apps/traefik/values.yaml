@@ -22,6 +22,10 @@ providers:
     publishedService:
       enabled: true
 
+additionalArguments:
+  - --entryPoints.web.forwardedHeaders.trustedIPs=10.10.0.0/24,100.64.0.0/10
+  - --entryPoints.websecure.forwardedHeaders.trustedIPs=10.10.0.0/24,100.64.0.0/10
+
 gateway:
   enabled: false
 
