@@ -1,0 +1,77 @@
+# actions/labeler@v5: PR 의 변경 path 기반 area 라벨 자동 부여
+# 라벨 정의는 .github/labels.yml 의 단일 진실 소스를 따른다.
+
+"area:infra":
+  - changed-files:
+      - any-glob-to-any-file:
+          - infra/**
+          - ansible/**
+          - gitops/argocd/**
+          - gitops/apps/kubevirt/**
+          - Makefile
+
+"area:security":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ansible/roles/cert_manager/**
+          - ansible/roles/keycloak_foundation/**
+          - ansible/roles/vault/**
+          - ansible/roles/falco/**
+          - gitops/apps/keycloak/**
+          - gitops/apps/cert-manager/**
+          - infra/kubernetes/cert-manager/**
+          - SECURITY.md
+
+"area:observability":
+  - changed-files:
+      - any-glob-to-any-file:
+          - gitops/apps/monitoring/**
+          - gitops/apps/grafana/**
+          - gitops/apps/prometheus/**
+          - gitops/apps/loki/**
+          - gitops/apps/tempo/**
+          - docs/observability/**
+
+"area:data":
+  - changed-files:
+      - any-glob-to-any-file:
+          - gitops/apps/kafka/**
+          - gitops/apps/airflow/**
+          - gitops/apps/dbt/**
+          - data/**
+
+"area:ai":
+  - changed-files:
+      - any-glob-to-any-file:
+          - ai/**
+          - gitops/apps/ai-bff/**
+          - gitops/apps/chromadb/**
+
+"area:service":
+  - changed-files:
+      - any-glob-to-any-file:
+          - services/**
+          - web/**
+          - apps/session-api/**
+          - apps/validation-engine/**
+
+"area:dr":
+  - changed-files:
+      - any-glob-to-any-file:
+          - gitops/apps/velero/**
+          - infra/gcp/**
+
+"area:ci":
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/**
+          - .github/labels.yml
+          - .github/labeler.yml
+          - .pre-commit-config.yaml
+          - renovate.json
+
+"type:docs":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - docs/**

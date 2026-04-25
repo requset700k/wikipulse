@@ -1,0 +1,22 @@
+name: pr-labeler
+
+# pull_request_target 사용: fork PR 에서도 secrets.GITHUB_TOKEN 으로 라벨 부여 가능.
+# checkout 을 하지 않으므로 fork 코드는 실행되지 않음 → 안전.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  labeler:
+    name: assign area labels
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: true
