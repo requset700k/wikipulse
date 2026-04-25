@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)",
+    ":dependencyDashboard",
+    "schedule:weekly"
+  ],
+  "labels": ["renovate"],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/.terraform/**",
+    "infra/terraform/**/.terraform.lock.hcl"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    },
+    {
+      "matchManagers": ["pre-commit"],
+      "groupName": "pre-commit hooks"
+    },
+    {
+      "matchManagers": ["terraform"],
+      "groupName": "terraform providers/modules"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["renovate", "major-update"]
+    },
+    {
+      "matchPackageNames": ["kubevirt/kubevirt", "kubevirt/containerized-data-importer"],
+      "groupName": "kubevirt stack"
+    }
+  ]
+}

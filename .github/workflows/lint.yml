@@ -2,7 +2,8 @@
 # 인프라 품질 게이트: pre-commit 전체 훅을 하나의 job 에서 실행.
 # ruff/ruff-format 은 ci-lint.yml 의 독립 job 이 담당하므로 SKIP 으로 제외해
 # CI 총 러닝타임에서 중복을 없앤다. terraform/gitleaks/yamllint/ansible-lint/
-# shellcheck/markdownlint/kubeconform/prettier 는 모두 pre-commit 훅으로 일원화.
+# kubeconform(+CRD-aware datreeio catalog)/shellcheck/markdownlint/prettier 는
+# 모두 pre-commit 훅으로 일원화 (kubeconform 은 local hook + 시스템 바이너리).
 name: lint
 
 on:
@@ -60,6 +61,15 @@ jobs:
             "https://terraform-docs.io/dl/${VERSION}/terraform-docs-${VERSION}-linux-amd64.tar.gz"
           sudo tar -xzf /tmp/terraform-docs.tar.gz -C /usr/local/bin terraform-docs
           sudo chmod +x /usr/local/bin/terraform-docs
+
+      - name: Install kubeconform
+        # pre-commit 의 local hook (entry: kubeconform) 이 시스템 바이너리 사용.
+        run: |
+          VERSION=v0.6.7
+          curl -sSLo /tmp/kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${VERSION}/kubeconform-linux-amd64.tar.gz"
+          sudo tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
+          sudo chmod +x /usr/local/bin/kubeconform
 
       - name: Install ansible-core and collections
         # ansible-lint 는 모듈 경로를 해석할 때 ~/.ansible/collections 를 탐색.
