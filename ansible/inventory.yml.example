@@ -24,3 +24,15 @@ all:
             cp02: { ansible_host: 10.10.0.12 }
             cp03: { ansible_host: 10.10.0.13 }
         # 이 프로젝트는 cp 노드를 워커로 겸용(taint 해제). 별도 워커 필요 시 아래에 추가.
+
+    # Keycloak DNS 임시 매핑을 등록할 팀원 로컬 장비.
+    # 각 팀원은 본인 장비의 Tailscale IP 또는 접속 가능한 SSH 주소로 교체한다.
+    local_dns_targets:
+      hosts:
+        member-linux:
+          ansible_host: 192.0.2.10       # TODO: 팀원 Linux/macOS Tailscale IP
+          ansible_user: ubuntu
+        member-windows:
+          ansible_host: 192.0.2.20       # TODO: 팀원 Windows 접속 주소
+          ansible_connection: winrm
+          ansible_user: Administrator
