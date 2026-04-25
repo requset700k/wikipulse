@@ -130,10 +130,41 @@
   until: keycloak_service_ip.stdout | length > 0
   become_user: ubuntu
 
+- name: Copy keycloak ingress manifest to control plane host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../infra/kubernetes/keycloak/ingress.yaml"
+    dest: "{{ keycloak_foundation_ingress_manifest_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Apply keycloak ingress manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    apply -f {{ keycloak_foundation_ingress_manifest_path }}
+  register: keycloak_foundation_ingress_apply
+  changed_when: >-
+    "created" in keycloak_foundation_ingress_apply.stdout
+    or "configured" in keycloak_foundation_ingress_apply.stdout
+  become_user: ubuntu
+
+- name: Wait until keycloak ingress receives address
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    -n {{ keycloak_foundation_namespace }}
+    get ingress {{ keycloak_foundation_ingress_name }}
+    -o jsonpath={.status.loadBalancer.ingress[0].ip}
+  register: keycloak_foundation_ingress_address
+  changed_when: false
+  retries: 30
+  delay: 6
+  until: keycloak_foundation_ingress_address.stdout | length > 0
+  become_user: ubuntu
+
 - name: Print keycloak foundation summary
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
     -n {{ keycloak_foundation_namespace }}
-    get keycloak,pods,svc,certificate,secret/{{ keycloak_foundation_tls_secret_name }}
+    get keycloak,pods,svc,ingress,certificate,secret/{{ keycloak_foundation_tls_secret_name }}
   changed_when: false
   become_user: ubuntu
