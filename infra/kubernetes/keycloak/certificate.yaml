@@ -1,0 +1,25 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-tls
+  namespace: keycloak
+spec:
+  secretName: keycloak-tls
+  duration: "2160h"
+  renewBefore: "720h"
+  commonName: keycloak.cledyu.local
+  dnsNames:
+    - keycloak.cledyu.local
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  issuerRef:
+    name: cledyu-ca
+    kind: ClusterIssuer
+    group: cert-manager.io

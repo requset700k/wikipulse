@@ -50,6 +50,47 @@
       served={{ keycloak_foundation_crd_served_versions }},
       selected={{ keycloak_foundation_cr_version_selected }}
 
+- name: Copy keycloak TLS certificate manifest to control plane host
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../infra/kubernetes/keycloak/certificate.yaml"
+    dest: "{{ keycloak_foundation_certificate_manifest_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Apply keycloak TLS certificate manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    apply -f {{ keycloak_foundation_certificate_manifest_path }}
+  register: keycloak_foundation_certificate_apply
+  changed_when: >-
+    "created" in keycloak_foundation_certificate_apply.stdout
+    or "configured" in keycloak_foundation_certificate_apply.stdout
+  become_user: ubuntu
+
+- name: Wait for keycloak TLS certificate to become Ready
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    -n {{ keycloak_foundation_namespace }}
+    wait --for=condition=Ready
+    certificate/{{ keycloak_foundation_tls_certificate_name }}
+    --timeout=3m
+  changed_when: false
+  become_user: ubuntu
+
+- name: Wait until keycloak TLS secret is created
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    -n {{ keycloak_foundation_namespace }}
+    get secret {{ keycloak_foundation_tls_secret_name }}
+    -o jsonpath={.type}
+  register: keycloak_foundation_tls_secret_type
+  changed_when: false
+  retries: 10
+  delay: 6
+  until: keycloak_foundation_tls_secret_type.stdout == "kubernetes.io/tls"
+  become_user: ubuntu
+
 - name: Render keycloak foundation manifest
   ansible.builtin.template:
     src: keycloak.yaml.j2
@@ -93,6 +134,6 @@
   ansible.builtin.command: >-
     kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
     -n {{ keycloak_foundation_namespace }}
-    get keycloak,pods,svc
+    get keycloak,pods,svc,certificate,secret/{{ keycloak_foundation_tls_secret_name }}
   changed_when: false
   become_user: ubuntu
