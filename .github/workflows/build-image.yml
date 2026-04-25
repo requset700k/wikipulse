@@ -1,0 +1,127 @@
+name: build-image
+
+# Reusable container build/push pipeline.
+#
+# 호출 패턴 (caller workflow):
+#   jobs:
+#     build:
+#       uses: ./.github/workflows/build-image.yml
+#       with:
+#         context: apps/<service>
+#         image-name: <service>
+#       permissions:
+#         contents: read
+#         packages: write
+#       secrets: inherit
+#
+# 빌드 정책:
+#   - PR             : build only (push X, scan X). 빌드 가능성 검증.
+#   - main push      : build + push + Trivy scan (HIGH/CRITICAL fail).
+#   - workflow_dispatch: push + scan (수동 재발행용).
+#
+# 태그:
+#   - sha-<short>     : immutable, ArgoCD pinning 용
+#   - <branch>        : preview, PR / 브랜치 별
+#   - latest          : main 브랜치 마지막 빌드 (데모/dev 용)
+#
+# Visibility: 첫 push 시 GHCR 이 자동으로 private 으로 생성. cledyu 패키지는
+# public 운영 (imagePullSecret 운영 부담 0). 첫 사용자 PR 머지 후 한 번만 수동
+# 전환 — docs/RUNBOOK/container-image.md "최초 1회 셋업" 참고.
+
+on:
+  workflow_call:
+    inputs:
+      context:
+        description: "Build context directory (e.g. apps/web)"
+        type: string
+        required: true
+      dockerfile:
+        description: "Dockerfile path relative to context"
+        type: string
+        default: Dockerfile
+      image-name:
+        description: "Image name (final segment of ghcr.io/<owner>/<image-name>)"
+        type: string
+        required: true
+      target:
+        description: "Multi-stage build target (optional)"
+        type: string
+        default: ""
+      platforms:
+        description: "Buildx target platforms"
+        type: string
+        default: linux/amd64
+      trivy-severity:
+        description: "Trivy fail severity threshold"
+        type: string
+        default: CRITICAL,HIGH
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: build-image-${{ inputs.image-name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/${{ github.repository_owner }}/${{ inputs.image-name }}
+
+jobs:
+  build:
+    name: build ${{ inputs.image-name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build${{ github.event_name != 'pull_request' && ' + push' || ' (PR — no push)' }}
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.context }}/${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
+          platforms: ${{ inputs.platforms }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ inputs.image-name }}
+          cache-to: type=gha,scope=${{ inputs.image-name }},mode=max
+          provenance: false
+
+      - name: Trivy image scan (HIGH/CRITICAL fail)
+        if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
+          severity: ${{ inputs.trivy-severity }}
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          format: table
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
