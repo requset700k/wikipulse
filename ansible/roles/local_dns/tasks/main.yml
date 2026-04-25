@@ -52,6 +52,13 @@
 - name: Flush DNS cache on macOS
   ansible.builtin.command: dscacheutil -flushcache
   changed_when: false
+  become: true
+  when: ansible_system == "Darwin"
+
+- name: Reset mDNSResponder on macOS
+  ansible.builtin.command: killall -HUP mDNSResponder
+  changed_when: false
+  become: true
   when: ansible_system == "Darwin"
 
 - name: Flush DNS cache on Windows
