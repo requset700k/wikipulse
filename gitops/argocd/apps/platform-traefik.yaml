@@ -1,0 +1,42 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-traefik
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://traefik.github.io/charts
+      chart: traefik
+      targetRevision: 39.0.8
+      helm:
+        releaseName: traefik
+        valueFiles:
+          - $values/gitops/apps/traefik/values.yaml
+    - repoURL: https://github.com/requset700k/cledyu.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/requset700k/cledyu.git
+      targetRevision: main
+      path: gitops/apps/traefik
+      directory:
+        include: namespace.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
