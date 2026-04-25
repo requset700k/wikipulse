@@ -1,0 +1,94 @@
+---
+- name: Validate local DNS entries
+  ansible.builtin.assert:
+    that:
+      - local_dns_entries | length > 0
+      - item.ip | length > 0
+      - item.hostname | length > 0
+    fail_msg: "local_dns_entries must include ip and hostname."
+  loop: "{{ local_dns_entries }}"
+
+- name: Register local DNS entries on Linux and macOS
+  ansible.builtin.lineinfile:
+    path: "{{ local_dns_unix_hosts_file }}"
+    regexp: '^\s*\S+\s+{{ item.hostname | regex_escape }}(\s|$)'
+    line: "{{ item.ip }}  {{ item.hostname }}"
+    state: present
+    create: false
+    backup: true
+  loop: "{{ local_dns_entries }}"
+  become: true
+  when: ansible_system in ["Linux", "Darwin"]
+
+- name: Register local DNS entries on Windows
+  ansible.windows.win_powershell:
+    script: |
+      $hostsPath = "{{ local_dns_windows_hosts_file }}"
+      $ip = "{{ item.ip }}"
+      $hostname = "{{ item.hostname }}"
+      $line = "$ip  $hostname"
+      $pattern = "^\s*\S+\s+$([regex]::Escape($hostname))(\s|$)"
+      $content = Get-Content -Path $hostsPath -ErrorAction Stop
+
+      if ($content -match $pattern) {
+        $updated = $content | ForEach-Object {
+          if ($_ -match $pattern) { $line } else { $_ }
+        }
+      } else {
+        $updated = @($content) + $line
+      }
+
+      $before = ($content -join "`n")
+      $after = ($updated -join "`n")
+      if ($before -ne $after) {
+        Set-Content -Path $hostsPath -Value $updated -Encoding ASCII
+        $Ansible.Changed = $true
+      } else {
+        $Ansible.Changed = $false
+      }
+  loop: "{{ local_dns_entries }}"
+  when: ansible_os_family == "Windows"
+
+- name: Flush DNS cache on macOS
+  ansible.builtin.command: dscacheutil -flushcache
+  changed_when: false
+  become: true
+  when: ansible_system == "Darwin"
+
+- name: Reset mDNSResponder on macOS
+  ansible.builtin.command: killall -HUP mDNSResponder
+  changed_when: false
+  become: true
+  when: ansible_system == "Darwin"
+
+- name: Flush DNS cache on Windows
+  ansible.windows.win_command: ipconfig /flushdns
+  changed_when: false
+  when: ansible_os_family == "Windows"
+
+- name: Verify local DNS entries on Linux
+  ansible.builtin.command: getent hosts {{ item.hostname }}
+  register: local_dns_linux_getent
+  changed_when: false
+  failed_when: item.ip not in local_dns_linux_getent.stdout
+  loop: "{{ local_dns_entries }}"
+  when: ansible_system == "Linux"
+
+- name: Verify local DNS entries on macOS
+  ansible.builtin.command: dscacheutil -q host -a name {{ item.hostname }}
+  register: local_dns_macos_lookup
+  changed_when: false
+  failed_when: item.ip not in local_dns_macos_lookup.stdout
+  loop: "{{ local_dns_entries }}"
+  when: ansible_system == "Darwin"
+
+- name: Verify local DNS entries on Windows
+  ansible.windows.win_command: >-
+    powershell.exe -NoProfile -Command
+    "[System.Net.Dns]::GetHostAddresses('{{ item.hostname }}') |
+    ForEach-Object { $_.IPAddressToString }"
+  register: local_dns_windows_lookup
+  changed_when: false
+  failed_when: item.ip not in local_dns_windows_lookup.stdout
+  loop: "{{ local_dns_entries }}"
+  when: ansible_os_family == "Windows"

@@ -1,0 +1,10 @@
+---
+# Phase 8: Local DNS hosts mapping for team devices.
+# run: ansible-playbook -i ansible/inventory.yml ansible/playbooks/80-local-dns.yml
+
+- name: Register local DNS entries for Cledyu services
+  hosts: local_dns_targets
+  gather_facts: true
+
+  roles:
+    - role: local_dns
