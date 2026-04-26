@@ -32,24 +32,44 @@ repos:
     hooks:
       - id: gitleaks
 
-  # 3) YAML (Ansible / K8s / GitHub Actions / Helm)
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
+  # 3) YAML (run through UTF-8 mode so Windows locales do not break Korean docs/comments)
+  - repo: local
     hooks:
       - id: yamllint
+        name: yamllint
+        entry: python -X utf8 -m yamllint
+        language: python
+        additional_dependencies: [yamllint==1.35.1]
         args: [-c=.yamllint.yml]
+        types: [yaml]
 
-  # 4) Terraform
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.96.2
+  # 4) Terraform (portable wrapper avoids WSL bash vs Windows path issues)
+  - repo: local
     hooks:
       - id: terraform_fmt
+        name: Terraform fmt
+        entry: python scripts/precommit_terraform.py fmt
+        language: system
+        files: ^infra/terraform/.*\.(tf|tfvars|tfvars\.example)$
+        require_serial: true
       - id: terraform_validate
-        args: [--hook-config=--retry-once-with-cleanup=true]
+        name: Terraform validate
+        entry: python scripts/precommit_terraform.py validate
+        language: system
+        files: ^infra/terraform/.*\.(tf|tfvars|tfvars\.example)$
+        require_serial: true
       - id: terraform_tflint
-        args: [--args=--minimum-failure-severity=warning]
+        name: Terraform tflint
+        entry: python scripts/precommit_terraform.py tflint
+        language: system
+        files: ^infra/terraform/.*\.(tf|tfvars|tfvars\.example)$
+        require_serial: true
       - id: terraform_docs
-        args: [--args=--config=.terraform-docs.yml]
+        name: Terraform docs
+        entry: python scripts/precommit_terraform.py docs
+        language: system
+        files: ^infra/terraform/.*\.(tf|tfvars|tfvars\.example)$
+        require_serial: true
 
   # 5.5) Kubernetes manifests (CRD-aware, datreeio CRDs catalog)
   # KubeVirt / CDI / Traefik / cert-manager / ArgoCD CRD 들도 검증됨.
@@ -79,7 +99,8 @@ repos:
     rev: v25.12.2
     hooks:
       - id: ansible-lint
-        files: \.(yaml|yml)$
+        files: ^ansible/.*\.(yaml|yml)$
+        always_run: false
         args: [ansible/]
 
   # 6.5) Go (apps/<svc> 안의 Go 모듈 단위로 golangci-lint).
