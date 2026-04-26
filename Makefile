@@ -88,4 +88,7 @@ keycloak-foundation-up: ## keycloak operator + postgres foundation (single defau
 		--extra-vars "@$(KEYCLOAK_SECRETS_FILE)" \
 		$(if $(ANSIBLE_VAULT_PASSWORD_FILE),--vault-password-file $(ANSIBLE_VAULT_PASSWORD_FILE),--ask-vault-pass)
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up keycloak-foundation-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url
+client-trust-up: ## install Cledyu root CA on client trust targets
+	ansible-playbook $(ANSIBLE_DIR)/playbooks/81-client-trust.yml
+
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up keycloak-foundation-up client-trust-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url

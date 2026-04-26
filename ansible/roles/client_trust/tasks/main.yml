@@ -1,0 +1,184 @@
+---
+- name: Validate client trust inputs
+  ansible.builtin.assert:
+    that:
+      - client_trust_ca_namespace | length > 0
+      - client_trust_ca_secret_name | length > 0
+      - client_trust_ca_common_name | length > 0
+      - client_trust_windows_store_location in ["CurrentUser", "LocalMachine"]
+    fail_msg: "client_trust defaults must include CA namespace, secret, CN, and valid Windows store location."
+
+- name: Extract root CA public certificate on controller
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - -n
+      - "{{ client_trust_ca_namespace }}"
+      - get
+      - secret
+      - "{{ client_trust_ca_secret_name }}"
+      - -o
+      - jsonpath={.data.tls\.crt}
+  delegate_to: localhost
+  run_once: true
+  register: client_trust_ca_b64
+  changed_when: false
+  environment:
+    KUBECONFIG: "{{ client_trust_kubeconfig }}"
+
+- name: Decode root CA public certificate for all targets
+  ansible.builtin.set_fact:
+    client_trust_ca_pem: "{{ hostvars[ansible_play_hosts_all[0]].client_trust_ca_b64.stdout | b64decode }}"
+
+- name: Copy root CA public certificate to Linux and macOS targets
+  ansible.builtin.copy:
+    content: "{{ client_trust_ca_pem }}"
+    dest: "{{ client_trust_unix_cert_path }}"
+    mode: "0644"
+  when: ansible_system in ["Linux", "Darwin"]
+
+- name: Copy root CA public certificate to Windows targets
+  ansible.windows.win_copy:
+    content: "{{ client_trust_ca_pem }}"
+    dest: "{{ client_trust_windows_cert_path }}"
+  when: ansible_os_family == "Windows"
+
+- name: Trust root CA on macOS
+  ansible.builtin.command:
+    argv:
+      - security
+      - add-trusted-cert
+      - -d
+      - -r
+      - trustRoot
+      - -k
+      - /Library/Keychains/System.keychain
+      - "{{ client_trust_unix_cert_path }}"
+  become: true
+  changed_when: true
+  when: ansible_system == "Darwin"
+
+- name: Trust root CA on Debian family Linux
+  ansible.builtin.copy:
+    content: "{{ client_trust_ca_pem }}"
+    dest: /usr/local/share/ca-certificates/cledyu-root-ca.crt
+    mode: "0644"
+  become: true
+  register: client_trust_debian_copy
+  when:
+    - ansible_system == "Linux"
+    - ansible_os_family == "Debian"
+
+- name: Update Debian family trust store
+  ansible.builtin.command: update-ca-certificates
+  become: true
+  changed_when: client_trust_debian_copy.changed
+  when:
+    - ansible_system == "Linux"
+    - ansible_os_family == "Debian"
+    - client_trust_debian_copy is defined
+
+- name: Trust root CA on RedHat family Linux
+  ansible.builtin.copy:
+    content: "{{ client_trust_ca_pem }}"
+    dest: /etc/pki/ca-trust/source/anchors/cledyu-root-ca.crt
+    mode: "0644"
+  become: true
+  register: client_trust_redhat_copy
+  when:
+    - ansible_system == "Linux"
+    - ansible_os_family == "RedHat"
+
+- name: Update RedHat family trust store
+  ansible.builtin.command: update-ca-trust
+  become: true
+  changed_when: client_trust_redhat_copy.changed
+  when:
+    - ansible_system == "Linux"
+    - ansible_os_family == "RedHat"
+    - client_trust_redhat_copy is defined
+
+- name: Trust root CA on Windows
+  ansible.windows.win_powershell:
+    script: |
+      $ErrorActionPreference = "Stop"
+      $certPath = "{{ client_trust_windows_cert_path }}"
+      $storeLocation = "{{ client_trust_windows_store_location }}"
+      $certificate = [Security.Cryptography.X509Certificates.X509Certificate2]::new($certPath)
+      $store = [Security.Cryptography.X509Certificates.X509Store]::new(
+        "Root",
+        [Security.Cryptography.X509Certificates.StoreLocation]::$storeLocation
+      )
+
+      $store.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+      try {
+        $existing = $store.Certificates.Find(
+          [Security.Cryptography.X509Certificates.X509FindType]::FindByThumbprint,
+          $certificate.Thumbprint,
+          $false
+        )
+      } finally {
+        $store.Close()
+      }
+
+      if ($existing.Count -eq 0) {
+        if ($storeLocation -eq "CurrentUser") {
+          & certutil.exe -user -f -addstore Root $certPath
+        } else {
+          & certutil.exe -f -addstore Root $certPath
+        }
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to install Cledyu Root CA into $storeLocation\Root."
+        }
+        $Ansible.Changed = $true
+      } else {
+        $Ansible.Changed = $false
+      }
+  when: ansible_os_family == "Windows"
+
+- name: Verify root CA on macOS
+  ansible.builtin.command:
+    argv:
+      - security
+      - find-certificate
+      - -c
+      - "{{ client_trust_ca_common_name }}"
+      - /Library/Keychains/System.keychain
+  changed_when: false
+  when: ansible_system == "Darwin"
+
+- name: Verify root CA on Linux
+  ansible.builtin.command:
+    argv:
+      - openssl
+      - x509
+      - -in
+      - "{{ client_trust_unix_cert_path }}"
+      - -noout
+      - -subject
+  register: client_trust_linux_subject
+  changed_when: false
+  failed_when: client_trust_ca_common_name not in client_trust_linux_subject.stdout
+  when: ansible_system == "Linux"
+
+- name: Verify root CA on Windows
+  ansible.windows.win_powershell:
+    script: |
+      $storeLocation = "{{ client_trust_windows_store_location }}"
+      $commonName = "{{ client_trust_ca_common_name }}"
+      $store = [Security.Cryptography.X509Certificates.X509Store]::new(
+        "Root",
+        [Security.Cryptography.X509Certificates.StoreLocation]::$storeLocation
+      )
+      $store.Open([Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+      try {
+        $match = $store.Certificates | Where-Object { $_.Subject -like "*$commonName*" }
+        if (-not $match) {
+          throw "Could not find $commonName in $storeLocation\Root."
+        }
+        $match | Select-Object Subject, Issuer, Thumbprint, NotAfter
+      } finally {
+        $store.Close()
+      }
+  changed_when: false
+  when: ansible_os_family == "Windows"

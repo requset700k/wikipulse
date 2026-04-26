@@ -1,0 +1,10 @@
+---
+# Phase 8b: Client trust setup for Cledyu internal CA.
+# run: ansible-playbook -i ansible/inventory.yml ansible/playbooks/81-client-trust.yml
+
+- name: Register Cledyu root CA in client trust stores
+  hosts: client_trust_targets
+  gather_facts: true
+
+  roles:
+    - role: client_trust

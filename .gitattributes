@@ -18,7 +18,7 @@
 *.sh    text eol=lf
 *.bash  text eol=lf
 *.bat   text eol=crlf
-*.ps1   text eol=crlf
+*.ps1   text eol=lf
 
 # diff 가독성
 *.lock           linguist-generated=true
