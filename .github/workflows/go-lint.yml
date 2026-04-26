@@ -1,0 +1,96 @@
+name: go-lint
+
+# Go 품질/테스트 게이트 — apps/ 안의 모든 Go 모듈을 자동 감지해 모듈별로 병렬 실행.
+# 모듈 없으면 lint/test job 자체가 skip → 첫 Go 모듈(apps/<service>/go.mod)이
+# 머지되는 순간부터 자동 가동.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - apps/**/*.go
+      - apps/**/go.mod
+      - apps/**/go.sum
+      - .golangci.yml
+      - .github/workflows/go-lint.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/**/*.go
+      - apps/**/go.mod
+      - apps/**/go.sum
+      - .golangci.yml
+      - .github/workflows/go-lint.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: detect Go modules
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.find.outputs.modules }}
+      has-modules: ${{ steps.find.outputs.has-modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: find
+        run: |
+          mods=$(find apps -name go.mod -printf '%h\n' 2>/dev/null \
+            | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "modules=$mods" >> "$GITHUB_OUTPUT"
+          if [ "$mods" != "[]" ]; then
+            echo "has-modules=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "has-modules=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Discovered: $mods"
+
+  lint:
+    name: golangci-lint (${{ matrix.module }})
+    needs: detect
+    if: needs.detect.outputs.has-modules == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.62
+          working-directory: ${{ matrix.module }}
+          args: --timeout=5m
+
+  test:
+    name: go test -race (${{ matrix.module }})
+    needs: detect
+    if: needs.detect.outputs.has-modules == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - name: go test -race -cover
+        working-directory: ${{ matrix.module }}
+        run: go test -race -cover ./...
+      - name: go mod tidy drift
+        working-directory: ${{ matrix.module }}
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum

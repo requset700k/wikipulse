@@ -71,6 +71,13 @@ jobs:
           sudo tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
           sudo chmod +x /usr/local/bin/kubeconform
 
+      - name: Install golangci-lint
+        # pre-commit 의 local hook (entry: golangci-lint) 이 시스템 바이너리 사용.
+        # apps/ 안에 Go 모듈 없으면 hook 의 for-loop 이 즉시 종료 → no-op.
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
+            | sudo sh -s -- -b /usr/local/bin v1.62.2
+
       - name: Install ansible-core and collections
         # ansible-lint 는 모듈 경로를 해석할 때 ~/.ansible/collections 를 탐색.
         # kubernetes.core / community.general / ansible.posix 를 미리 깔아두지

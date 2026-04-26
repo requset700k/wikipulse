@@ -82,6 +82,18 @@ repos:
         files: \.(yaml|yml)$
         args: [ansible/]
 
+  # 6.5) Go (apps/<svc> 안의 Go 모듈 단위로 golangci-lint).
+  # CI 러너에는 lint.yml 이 시스템 바이너리 설치 step 보유.
+  # 모듈이 없으면 entry 가 즉시 종료 → no-op.
+  - repo: local
+    hooks:
+      - id: golangci-lint
+        name: golangci-lint (per Go module)
+        entry: bash -c 'command -v golangci-lint >/dev/null 2>&1 || { echo "golangci-lint not installed locally — skipping (CI 의 lint.yml 이 설치 step 보유)"; exit 0; }; mods=$(find apps -name go.mod -printf "%h\n" 2>/dev/null); [ -z "$mods" ] && exit 0; for d in $mods; do (cd "$d" && golangci-lint run --timeout=5m) || exit 1; done'
+        language: system
+        files: '^apps/.*\.go$|^apps/.*/go\.(mod|sum)$|^\.golangci\.yml$'
+        pass_filenames: false
+
   # 7) Shell
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
