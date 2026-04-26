@@ -1,0 +1,9 @@
+---
+client_trust_ca_namespace: cert-manager
+client_trust_ca_secret_name: cledyu-root-ca
+client_trust_kubeconfig: ""
+client_trust_ca_common_name: Cledyu Root CA
+client_trust_unix_cert_path: /tmp/cledyu-root-ca.crt
+client_trust_windows_cert_path: C:\Windows\Temp\cledyu-root-ca.crt
+client_trust_windows_store_location: CurrentUser
+client_trust_keycloak_url: https://keycloak.cledyu.local/admin/
