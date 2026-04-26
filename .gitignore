@@ -3,12 +3,15 @@
 *.tfstate
 *.tfstate.*
 *.tfvars
+*.tfvars.json
+*.tfplan
 !*.tfvars.example
 .terraform.lock.hcl
 crash.log
 crash.*.log
 
 # Ansible
+.ansible/
 *.retry
 ansible/inventory.yml
 ansible/.vault_pass
@@ -36,7 +39,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-.pre-commit-cache/
+.pre-commit-cache*/
 .ansible-home/
 .pc-cache*/
 .pytest_cache/

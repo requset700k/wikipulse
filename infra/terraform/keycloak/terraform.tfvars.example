@@ -1,0 +1,122 @@
+keycloak_admin_username = "temp-admin"
+keycloak_admin_password = "REPLACE_WITH_1PASSWORD_VALUE"
+
+oidc_clients = {
+  web = {
+    name                         = "Cledyu Web"
+    access_type                  = "PUBLIC"
+    standard_flow_enabled        = true
+    direct_access_grants_enabled = false
+    implicit_flow_enabled        = false
+    service_accounts_enabled     = false
+    pkce_code_challenge_method   = "S256"
+    valid_redirect_uris          = ["https://app.cledyu.local/*"]
+    web_origins                  = ["https://app.cledyu.local"]
+  }
+
+  api = {
+    name                         = "Cledyu API"
+    access_type                  = "BEARER-ONLY"
+    standard_flow_enabled        = false
+    direct_access_grants_enabled = false
+    implicit_flow_enabled        = false
+    service_accounts_enabled     = false
+  }
+
+  tutor = {
+    name                         = "Cledyu Tutor API"
+    access_type                  = "BEARER-ONLY"
+    standard_flow_enabled        = false
+    direct_access_grants_enabled = false
+    implicit_flow_enabled        = false
+    service_accounts_enabled     = false
+  }
+
+  argocd = {
+    name                            = "Cledyu ArgoCD"
+    access_type                     = "CONFIDENTIAL"
+    standard_flow_enabled           = true
+    direct_access_grants_enabled    = false
+    implicit_flow_enabled           = false
+    service_accounts_enabled        = false
+    valid_redirect_uris             = ["https://argocd.cledyu.local/auth/callback"]
+    valid_post_logout_redirect_uris = ["https://argocd.cledyu.local/"]
+    web_origins                     = ["https://argocd.cledyu.local"]
+  }
+
+  grafana = {
+    name                            = "Cledyu Grafana"
+    access_type                     = "CONFIDENTIAL"
+    standard_flow_enabled           = true
+    direct_access_grants_enabled    = false
+    implicit_flow_enabled           = false
+    service_accounts_enabled        = false
+    valid_redirect_uris             = ["https://grafana.cledyu.local/login/generic_oauth"]
+    valid_post_logout_redirect_uris = ["https://grafana.cledyu.local/"]
+    web_origins                     = ["https://grafana.cledyu.local"]
+  }
+}
+
+oidc_client_secrets = {
+  argocd  = "REPLACE_WITH_ARGOCD_CLIENT_SECRET"
+  grafana = "REPLACE_WITH_GRAFANA_CLIENT_SECRET"
+}
+
+team_members = {
+  kylekim = {
+    username   = "kylekim"
+    email      = "kylekim@example.invalid"
+    first_name = "Yonggyun"
+    last_name  = "Kim"
+    groups     = ["team-platform"]
+  }
+
+  yunseungho = {
+    username   = "yunseungho"
+    email      = "yunseungho@example.invalid"
+    first_name = "Seungho"
+    last_name  = "Yun"
+    groups     = ["team-security"]
+  }
+
+  joseungyeon = {
+    username   = "joseungyeon"
+    email      = "joseungyeon@example.invalid"
+    first_name = "Seungyeon"
+    last_name  = "Jo"
+    groups     = ["team-observability"]
+  }
+
+  kimchanyoung = {
+    username   = "kimchanyoung"
+    email      = "kimchanyoung@example.invalid"
+    first_name = "Chanyoung"
+    last_name  = "Kim"
+    groups     = ["team-lab-data"]
+  }
+
+  yangsungho = {
+    username   = "yangsungho"
+    email      = "yangsungho@example.invalid"
+    first_name = "Sungho"
+    last_name  = "Yang"
+    groups     = ["team-ai"]
+  }
+
+  hanjeonghyeon = {
+    username   = "hanjeonghyeon"
+    email      = "hanjeonghyeon@example.invalid"
+    first_name = "Jeonghyeon"
+    last_name  = "Han"
+    groups     = ["team-service"]
+  }
+}
+
+team_member_initial_passwords = {
+  kylekim        = "REPLACE_WITH_TEMP_PASSWORD"
+  yunseungho     = "REPLACE_WITH_TEMP_PASSWORD"
+  joseungyeon    = "REPLACE_WITH_TEMP_PASSWORD"
+  kimchanyoung   = "REPLACE_WITH_TEMP_PASSWORD"
+  yangsungho     = "REPLACE_WITH_TEMP_PASSWORD"
+  hanjeonghyeon  = "REPLACE_WITH_TEMP_PASSWORD"
+}
