@@ -1,106 +1,95 @@
-# ADR: Keycloak RBAC Model
+# ADR: Keycloak 권한 모델 (RBAC)
 
-- **Status:** Proposed
-- **Date:** 2026-04-26
-- **Proposer:** 김용균 / Platform
-- **Decision makers:** 김용균 / 윤승호
-- **Related:** Keycloak Ingress + TLS, Keycloak Client Trust Setup
+- **상태:** Proposed
+- **날짜:** 2026-04-26
+- **제안자:** 김용균 / Platform
+- **의사결정자:** 김용균 / 윤승호
+- **관련:** Keycloak Ingress + TLS, Keycloak Client Trust Setup
 
-## 1. Context
+## 1. 컨텍스트
 
-`https://keycloak.cledyu.local` is now externally reachable through Traefik and
-Cledyu internal TLS. From this point, running only with the bootstrap admin and
-an empty realm creates avoidable security debt.
+`https://keycloak.cledyu.local` 가 Traefik + Cledyu 내부 TLS 로 외부 노출 완료된 시점부터, default bootstrap admin 만으로 운영하는 것은 그 자체로 보안 부채가 된다.
 
-This ADR defines the application-level Keycloak authorization model so the
-realm, clients, roles, groups, and team member access can be implemented
-declaratively with Terraform.
+본 ADR 은 application 레벨 Keycloak 권한 모델 — realm / client / role / group / 팀원 접근 — 을 Terraform 으로 선언적으로 구현 가능하도록 합의한다.
 
-## 2. Problem / Goals
+## 2. 문제 / 목표
 
-Goals:
+목표:
 
-- Minimize the window where the default bootstrap admin is used for operations.
-- Apply least privilege across the 6 team members.
-- Define OIDC inputs for `web`, `api`, `tutor`, `argocd`, and `grafana`.
-- Define the MVP lifecycle for instructors and students.
-- Keep authentication and admin audit events aligned with the `security-logs`
-  pipeline.
+- default bootstrap admin 으로 운영되는 윈도우 최소화
+- 6명 팀원의 최소권한 원칙 적용
+- `web`, `api`, `tutor`, `argocd`, `grafana` 의 OIDC 입력값 정의
+- 강사 / 학습자 lifecycle 의 MVP 정의
+- 인증 / admin audit 이벤트를 `security-logs` 파이프라인에 정렬
 
-Non-goals for this ADR:
+본 ADR 의 비-목표:
 
-- External learner realm separation.
-- Google Workspace or SAML IdP integration.
-- Keycloak audit event forwarding to Kafka. This depends on Strimzi and remains
-  a follow-up PR.
+- 외부 학습자용 별도 realm 분리
+- Google Workspace / SAML IdP 연동
+- Keycloak audit → Kafka 연동 (Strimzi 의존, 후속 PR)
 
-## 3. Considered Options
+## 3. 고려한 대안
 
-### Option A: Single `cledyu` realm
+### 옵션 A: `cledyu` 단일 realm
 
-- Pros: Simple, low operational overhead, appropriate for a 6-person internal
-  project.
-- Cons: External learner separation requires a future ADR if the project expands.
+- 장점: 단순, 운영 부담 작음, 6인 내부 프로젝트에 적합
+- 단점: 외부 학습자 분리 필요 시 별도 ADR 필요
 
-### Option B: `master` plus `cledyu` with stricter admin isolation
+### 옵션 B: `master` + `cledyu` 분리, admin 격리 강화
 
-- Pros: Stronger separation between platform operators and application users.
-- Cons: More operational complexity than the MVP needs.
+- 장점: 플랫폼 운영자 / 일반 사용자 격리 강함
+- 단점: MVP 단계에 과한 운영 복잡도
 
-### Option C: Split `cledyu-internal` and `cledyu-external`
+### 옵션 C: `cledyu-internal` + `cledyu-external` 분리
 
-- Pros: Best long-term isolation for external learners or enterprise customers.
-- Cons: Premature for the current 3-month internal project.
+- 장점: 외부 학습자 / 기업 고객 장기 격리에 최적
+- 단점: 3개월 내부 프로젝트에 시기상조
 
-## 4. Decision
+## 4. 결정
 
-Adopt Option A.
+**옵션 A 채택.**
 
-- `master` is reserved for Keycloak super-admin access only.
-- Business users, services, learners, instructors, and team groups live in the
-  `cledyu` realm.
-- The model is implemented with Terraform using the `mrparkers/keycloak`
-  provider.
+- `master` realm 은 Keycloak super-admin 전용으로 보존
+- 비즈니스 사용자 / 서비스 / 학습자 / 강사 / 팀 그룹은 모두 `cledyu` realm 에 둔다
+- 구현은 Terraform `mrparkers/keycloak` provider 사용
 
 ## 5. Realm
 
-| Realm | Purpose |
+| Realm | 목적 |
 |---|---|
-| `cledyu` | All Cledyu service users, team users, learners, instructors, roles, and OIDC clients |
+| `cledyu` | 모든 Cledyu 서비스 사용자, 팀원, 학습자, 강사, role, OIDC client |
 
-Realm policy:
+Realm 정책:
 
-- Self-registration disabled.
-- Remember-me disabled.
-- Offline tokens disabled for the MVP.
-- First login password update is required for managed users.
+- self-registration 비활성
+- remember-me 비활성
+- offline token MVP 단계는 비활성
+- 첫 로그인 시 비밀번호 변경 강제 (managed user)
 
-## 6. Clients
+## 6. Client
 
-| Client | Service | Type | Flow | Notes |
+| Client | 서비스 | Type | Flow | 비고 |
 |---|---|---|---|---|
-| `web` | Next.js | public | Authorization Code + PKCE | SPA-facing login |
-| `api` | Go/Gin | bearer-only | JWT validation only | No direct login |
-| `tutor` | FastAPI | bearer-only | JWT validation only | No direct login |
-| `argocd` | ArgoCD | confidential | Authorization Code | Uses group claim mapping |
-| `grafana` | Grafana | confidential | Authorization Code | Uses role/group mapping |
+| `web` | Next.js | public | Authorization Code + PKCE | SPA 로그인 |
+| `api` | Go/Gin | bearer-only | JWT 검증만 | 직접 로그인 X |
+| `tutor` | FastAPI | bearer-only | JWT 검증만 | 직접 로그인 X |
+| `argocd` | ArgoCD | confidential | Authorization Code | group claim 매핑 사용 |
+| `grafana` | Grafana | confidential | Authorization Code | role / group 매핑 사용 |
 
-## 7. Realm Roles
+## 7. Realm Role
 
-| Role | Meaning | Primary assignee |
+| Role | 의미 | 주요 부여 대상 |
 |---|---|---|
-| `student` | Lab access and AI tutor usage | Learners |
-| `instructor` | Learner creation, lab variation, instructor mode | Instructors |
-| `admin` | Operational administration | Team domain owners |
-| `observer` | Read-only dashboard/log access | Cross-domain team access |
+| `student` | Lab 접근 + AI 튜터 사용 | 학습자 |
+| `instructor` | 학습자 계정 생성 + Lab 변형 + 강사 모드 | 강사 |
+| `admin` | 운영 관리 | 팀 도메인 owner |
+| `observer` | 대시보드 / 로그 read-only | 도메인 외 팀원 접근 |
 
-Client roles are intentionally not introduced in the MVP. If ArgoCD projects,
-Grafana folders, or service-specific scopes need stronger separation, client
-roles will be added in a follow-up ADR.
+Client role 은 MVP 에서는 도입하지 않는다. ArgoCD project / Grafana folder / 서비스 별 scope 세분화가 필요해지면 후속 ADR 로 client role 추가.
 
-## 8. Groups
+## 8. Group
 
-| Group | Realm role mapping | Members |
+| Group | Realm role 매핑 | 멤버 |
 |---|---|---|
 | `team-platform` | `admin` | 김용균 |
 | `team-security` | `admin` | 윤승호 |
@@ -108,15 +97,14 @@ roles will be added in a follow-up ADR.
 | `team-lab-data` | `admin`, `observer` | 김찬영 |
 | `team-ai` | `admin`, `observer` | 양성호 |
 | `team-service` | `admin`, `observer` | 한정현 |
-| `students-cohort-0` | `student` | Learners invited by instructors |
-| `instructors` | `instructor` | Instructors |
+| `students-cohort-0` | `student` | 강사가 초대한 학습자 |
+| `instructors` | `instructor` | 강사 |
 
-Domain-specific authorization is handled by downstream applications through
-group claims. Keycloak only emits the group and role claims.
+도메인 별 권한은 downstream application 이 group claim 으로 처리. Keycloak 자체는 group / role claim 만 발행.
 
-## 9. Team Permission Matrix
+## 9. 팀 권한 매트릭스
 
-| Name | Team | Keycloak | ArgoCD | Grafana | Web/API/Tutor |
+| 이름 | 팀 | Keycloak | ArgoCD | Grafana | Web/API/Tutor |
 |---|---|---|---|---|---|
 | 김용균 | platform | super-admin | admin | admin | admin |
 | 윤승호 | security | admin | reader | reader | observer |
@@ -125,88 +113,80 @@ group claims. Keycloak only emits the group and role claims.
 | 양성호 | ai | reader | reader | reader | observer |
 | 한정현 | service | reader | reader | reader | admin |
 
-Principle:
+원칙:
 
-- Admin on the owner domain.
-- Reader or observer outside the owner domain.
-- Keycloak super-admin is held by 김용균, with 윤승호 as break-glass backup.
+- 본인 도메인은 admin
+- 도메인 외에는 reader 또는 observer
+- Keycloak super-admin 은 김용균, break-glass 백업은 윤승호
 
-## 10. Learner / Instructor Lifecycle
+## 10. 학습자 / 강사 lifecycle
 
 MVP:
 
-- Instructor creates learner accounts from the admin console.
-- Instructor assigns temporary passwords.
-- Learners must change passwords on first login.
-- Self-registration remains disabled.
+- 강사가 admin console 에서 학습자 계정 생성
+- 임시 비밀번호 부여
+- 학습자는 첫 로그인 시 비밀번호 변경 강제
+- self-registration 비활성 유지
 
-Future:
+장기:
 
-- CSV import for cohort users.
-- Google Workspace or enterprise SAML IdP integration after a separate ADR.
+- cohort 사용자 CSV import
+- 별도 ADR 후 Google Workspace 또는 기업 SAML IdP 연동
 
-## 11. Token / Session Policy
+## 11. Token / Session 정책
 
-| Item | Value | Reason |
+| 항목 | 값 | 근거 |
 |---|---|---|
-| Access token TTL | 15 minutes | Balance UX and security |
-| Refresh token TTL | 8 hours | One-day learning session |
-| SSO session idle | 30 minutes | Protect unattended learner devices |
-| SSO session max | 8 hours | Align with refresh token lifetime |
-| Offline token | Disabled | Simpler MVP security model |
-| Remember me | Disabled | Shared learner PC risk |
+| Access token TTL | 15분 | UX 와 보안 균형 |
+| Refresh token TTL | 8시간 | 1일 1세션 학습 흐름 |
+| SSO session idle | 30분 | 학습자 PC 미사용 보호 |
+| SSO session max | 8시간 | refresh token 과 정렬 |
+| Offline token | 비활성 | MVP 보안 모델 단순화 |
+| Remember me | 비활성 | 학습자 PC 공유 risk |
 
-## 12. Audit Event Policy
+## 12. Audit 이벤트 정책
 
-| Category | Keycloak event types | Target |
+| 카테고리 | Keycloak 이벤트 타입 | 대상 |
 |---|---|---|
-| Authentication | `LOGIN_SUCCESS`, `LOGIN_ERROR`, `LOGOUT`, `REGISTER`, `UPDATE_PASSWORD` | `security-logs` |
-| Admin changes | `CREATE_USER`, `DELETE_USER`, `ASSIGN_ROLE`, `UPDATE_USER`, `IMPERSONATE` | `security-logs` |
-| Client login | `CLIENT_LOGIN`, `CLIENT_LOGIN_ERROR` | `security-logs` |
+| 인증 | `LOGIN_SUCCESS`, `LOGIN_ERROR`, `LOGOUT`, `REGISTER`, `UPDATE_PASSWORD` | `security-logs` |
+| Admin 변경 | `CREATE_USER`, `DELETE_USER`, `ASSIGN_ROLE`, `UPDATE_USER`, `IMPERSONATE` | `security-logs` |
+| Client 로그인 | `CLIENT_LOGIN`, `CLIENT_LOGIN_ERROR` | `security-logs` |
 
-Kafka forwarding is implemented later through a Keycloak Event Listener SPI or
-Webhook-to-Kafka publisher after Strimzi is ready.
+Kafka 전송은 Strimzi 준비 후 Keycloak Event Listener SPI 또는 Webhook-to-Kafka publisher 로 별도 PR 에서 구현.
 
 ## 13. Bootstrap / DR
 
-- Initial super-admin: `kylekim`.
-- Initial admin credential is stored in 1Password Team Vault:
-  `Cledyu/keycloak-admin`.
-- 윤승호 has break-glass access to the same 1Password item.
-- Realm export backup is planned as a daily Kubernetes CronJob with 30-day S3
-  retention.
-- Super-admin password rotation target: every 90 days.
+- Initial super-admin: 김용균 (`kylekim`)
+- Admin credential 보관: 1Password Team Vault `Cledyu/keycloak-admin`
+- 윤승호가 동일 1Password 항목 break-glass 접근권 보유
+- Realm export 백업: 일 1회 Kubernetes CronJob, S3 30일 보존
+- super-admin 비밀번호 회전: 90일
 
-## 14. Consequences
+## 14. 결과 (Consequences)
 
-Positive:
+긍정:
 
-- Keycloak no longer depends on ad-hoc default admin usage after exposure.
-- OIDC integration inputs are explicit for all 5 services.
-- Team blast radius is reduced through group-based least privilege.
-- Audit policy aligns with the future `security-logs` SIEM pipeline.
+- 외부 노출 후 default admin 의존 제거
+- 5개 서비스의 OIDC 입력값이 명시 — 후속 통합 PR 의 ambiguity 제거
+- Group 기반 최소권한으로 팀 blast radius 격리
+- Audit 정책이 `security-logs` SIEM 파이프라인과 정렬
 
-Trade-offs:
+트레이드오프:
 
-- Learner self-registration is disabled, so instructors carry the MVP account
-  creation workload.
-- Detailed ArgoCD project or Grafana folder authorization is deferred to
-  downstream applications.
-- Kafka audit forwarding waits for Strimzi readiness.
+- 학습자 self-registration 비활성으로 강사가 MVP 계정 생성 부담
+- ArgoCD project / Grafana folder 의 세부 권한은 downstream application 에 위임
+- Kafka audit 전송은 Strimzi 준비를 기다림
 
-## 15. Verification Criteria
+## 15. 검증 기준
 
-- All 6 team users can log in to `https://keycloak.cledyu.local`.
-- Each team user lands in the expected group.
-- `web`, `api`, `tutor`, `argocd`, and `grafana` clients exist in the `cledyu`
-  realm.
-- `student`, `instructor`, `admin`, and `observer` realm roles exist.
-- A learner invite flow succeeds:
-  instructor creates learner, learner first login forces password update, and
-  learner enters the lab.
-- `kcadm.sh get events` shows login and login-error events.
+- 6명 팀원 모두 `https://keycloak.cledyu.local` 로그인 가능
+- 각 팀원이 의도한 group 에 자동 매핑됨
+- `web`, `api`, `tutor`, `argocd`, `grafana` client 가 `cledyu` realm 에 존재
+- `student`, `instructor`, `admin`, `observer` realm role 이 존재
+- 학습자 초대 시나리오 e2e: 강사가 학습자 생성 → 학습자 첫 로그인 시 비밀번호 변경 강제 → Lab 진입
+- `kcadm.sh get events` 로 LOGIN / LOGIN_ERROR 이벤트 확인
 
-## 16. References
+## 16. 참고
 
 - Terraform provider: `mrparkers/keycloak`
 - Keycloak Admin Console: `https://keycloak.cledyu.local/admin/`
