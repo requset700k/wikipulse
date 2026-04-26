@@ -2,8 +2,8 @@
 
 - **Status:** Proposed
 - **Date:** 2026-04-26
-- **Proposer:** ??? / Platform
-- **Decision makers:** ??? / ???
+- **Proposer:** 김용균 / Platform
+- **Decision makers:** 김용균 / 윤승호
 - **Related:** Keycloak Ingress + TLS, Keycloak Client Trust Setup
 
 ## 1. Context
@@ -102,12 +102,12 @@ roles will be added in a follow-up ADR.
 
 | Group | Realm role mapping | Members |
 |---|---|---|
-| `team-platform` | `admin` | ??? |
-| `team-security` | `admin` | ??? |
-| `team-observability` | `admin`, `observer` | ??? |
-| `team-lab-data` | `admin`, `observer` | ??? |
-| `team-ai` | `admin`, `observer` | ??? |
-| `team-service` | `admin`, `observer` | ??? |
+| `team-platform` | `admin` | 김용균 |
+| `team-security` | `admin` | 윤승호 |
+| `team-observability` | `admin`, `observer` | 조승연 |
+| `team-lab-data` | `admin`, `observer` | 김찬영 |
+| `team-ai` | `admin`, `observer` | 양성호 |
+| `team-service` | `admin`, `observer` | 한정현 |
 | `students-cohort-0` | `student` | Learners invited by instructors |
 | `instructors` | `instructor` | Instructors |
 
@@ -118,18 +118,18 @@ group claims. Keycloak only emits the group and role claims.
 
 | Name | Team | Keycloak | ArgoCD | Grafana | Web/API/Tutor |
 |---|---|---|---|---|---|
-| ??? | platform | super-admin | admin | admin | admin |
-| ??? | security | admin | reader | reader | observer |
-| ??? | observability | reader | reader | admin | observer |
-| ??? | lab-data | reader | reader | reader | observer |
-| ??? | ai | reader | reader | reader | observer |
-| ??? | service | reader | reader | reader | admin |
+| 김용균 | platform | super-admin | admin | admin | admin |
+| 윤승호 | security | admin | reader | reader | observer |
+| 조승연 | observability | reader | reader | admin | observer |
+| 김찬영 | lab-data | reader | reader | reader | observer |
+| 양성호 | ai | reader | reader | reader | observer |
+| 한정현 | service | reader | reader | reader | admin |
 
 Principle:
 
 - Admin on the owner domain.
 - Reader or observer outside the owner domain.
-- Keycloak super-admin is held by ???, with ??? as break-glass backup.
+- Keycloak super-admin is held by 김용균, with 윤승호 as break-glass backup.
 
 ## 10. Learner / Instructor Lifecycle
 
@@ -172,7 +172,7 @@ Webhook-to-Kafka publisher after Strimzi is ready.
 - Initial super-admin: `kylekim`.
 - Initial admin credential is stored in 1Password Team Vault:
   `Cledyu/keycloak-admin`.
-- ??? has break-glass access to the same 1Password item.
+- 윤승호 has break-glass access to the same 1Password item.
 - Realm export backup is planned as a daily Kubernetes CronJob with 30-day S3
   retention.
 - Super-admin password rotation target: every 90 days.
