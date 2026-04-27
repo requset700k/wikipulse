@@ -1,0 +1,54 @@
+---
+# CoreDNS ConfigMap — *.cledyu.local 도메인을 Traefik VIP (10.10.0.101) 로 매핑.
+# 이유:
+#   클러스터 내부 pod 가 Keycloak/ArgoCD/Grafana 등 OIDC discovery 호출 시
+#   외부 도메인 keycloak.cledyu.local 을 해석해야 한다. 일반 forward (8.8.8.8 등)
+#   는 해당 도메인 모름 (.local 은 internal). 따라서 hosts plugin 으로 매핑.
+#
+# 신규 *.cledyu.local 호스트 추가 시:
+#   data.Corefile.hosts 섹션에 한 줄 추가 → kubectl apply → coredns rollout restart.
+#
+# 적용:
+#   kubectl apply -f infra/kubernetes/coredns/configmap.yaml
+#   kubectl -n kube-system rollout restart deployment coredns
+#
+# 주의:
+#   kubeadm 이 처음 install 시 자체적으로 만든 ConfigMap 위에 patch 하는 형태.
+#   Kubernetes upgrade 시 kubeadm 이 덮어쓸 수 있음 → upgrade 후 본 manifest 재적용 필수.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+           lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+           pods insecure
+           fallthrough in-addr.arpa ip6.arpa
+           ttl 30
+        }
+        hosts {
+            10.10.0.101 keycloak.cledyu.local
+            10.10.0.101 argocd.cledyu.local
+            10.10.0.101 grafana.cledyu.local
+            10.10.0.101 app.cledyu.local
+            10.10.0.101 api.cledyu.local
+            10.10.0.101 tutor.cledyu.local
+            fallthrough
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf {
+           max_concurrent 1000
+        }
+        cache 30
+        loop
+        reload
+        loadbalance
+    }

@@ -1,0 +1,123 @@
+---
+# ArgoCD Helm values — chart argo-cd 7.7.10 (app v2.13.2)
+# OIDC = Keycloak (cledyu realm), Ingress = Traefik + cert-manager (cledyu-ca).
+#
+# Sensitive 분리:
+#   - argocd client secret 은 argocd-secret 의 oidc.keycloak.clientSecret 키로 별도 patch.
+#     (manifest 에 평문 저장 X. 1Password "Cledyu/keycloak-bootstrap-secrets/argocd" 참조)
+#   - rootCA inline: cert-manager 의 cledyu-root-ca public 인증서.
+#
+# 적용:
+#   helm upgrade argocd argo/argo-cd -n argocd --version 7.7.10 -f gitops/apps/argocd/values.yaml
+
+applicationSet:
+  enabled: true
+  replicas: 1
+  resources:
+    limits: {cpu: 500m, memory: 256Mi}
+    requests: {cpu: 50m, memory: 64Mi}
+
+controller:
+  replicas: 1
+  resources:
+    limits: {cpu: 2000m, memory: 2Gi}
+    requests: {cpu: 100m, memory: 256Mi}
+
+dex:
+  enabled: false
+
+global:
+  logging:
+    format: text
+    level: info
+
+notifications:
+  enabled: false
+
+redis:
+  enabled: true
+
+redis-ha:
+  enabled: false
+
+repoServer:
+  autoscaling:
+    enabled: false
+  replicas: 1
+  resources:
+    limits: {cpu: 1000m, memory: 1Gi}
+    requests: {cpu: 50m, memory: 128Mi}
+
+server:
+  autoscaling:
+    enabled: false
+  # Traefik 이 TLS 종료 → ArgoCD 자체는 HTTP 만 받음.
+  extraArgs:
+    - --insecure
+  replicas: 1
+  resources:
+    limits: {cpu: 500m, memory: 512Mi}
+    requests: {cpu: 50m, memory: 128Mi}
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hostname: argocd.cledyu.local
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    tls: true
+    extraTls:
+      - hosts:
+          - argocd.cledyu.local
+        secretName: argocd-tls
+
+configs:
+  cm:
+    exec.enabled: "true"
+    url: https://argocd.cledyu.local
+    admin.enabled: "true"
+    # OIDC = Keycloak (cledyu realm). clientSecret 은 argocd-secret 의 별도 키 참조.
+    # requestedScopes 에 'groups' 미포함: keycloak realm 에 groups client scope 미등록 (후속 PR).
+    # 대신 Keycloak client argocd 의 protocol mapper (group_membership) 가 모든 토큰에
+    # groups claim 자동 추가하므로 RBAC 의 scopes:'[groups]' 는 정상 동작.
+    oidc.config: |
+      name: Keycloak
+      issuer: https://keycloak.cledyu.local/realms/cledyu
+      clientID: argocd
+      clientSecret: $oidc.keycloak.clientSecret
+      requestedScopes:
+        - openid
+        - profile
+        - email
+      requestedIDTokenClaims:
+        groups:
+          essential: true
+      rootCA: |
+        -----BEGIN CERTIFICATE-----
+        MIIFXDCCA0SgAwIBAgIUAdbfCoY4XJ9ov6m5rAzdcSZemrwwDQYJKoZIhvcNAQEN
+        BQAwRjEPMA0GA1UEChMGQ2xlZHl1MRowGAYDVQQLExFQbGF0Zm9ybSBTZWN1cml0
+        eTEXMBUGA1UEAxMOQ2xlZHl1IFJvb3QgQ0EwHhcNMjYwNDI0MDYyNDA2WhcNMzYw
+        NDIxMDYyNDA2WjBGMQ8wDQYDVQQKEwZDbGVkeXUxGjAYBgNVBAsTEVBsYXRmb3Jt
+        IFNlY3VyaXR5MRcwFQYDVQQDEw5DbGVkeXUgUm9vdCBDQTCCAiIwDQYJKoZIhvcN
+        AQEBBQADggIPADCCAgoCggIBAJ/UWq4VpRLdBd7oCdeQ1Y8CHeLbGmwAo7EvcnIx
+        # NOTE: 실제 PEM 본문은 deploy 시점에 cert-manager Secret 에서 추출해 채움.
+        #   ROOT_CA_PEM=$(kubectl -n cert-manager get secret cledyu-root-ca \
+        #     -o jsonpath='{.data.tls\.crt}' | base64 -d)
+        #   sed 등으로 이 placeholder 자리에 PEM 8-space indent 삽입 후 helm upgrade.
+        # 본 매니페스트는 placeholder 만 보존 (root CA 가 후속 회전 시 변경되므로).
+        -----END CERTIFICATE-----
+  params:
+    server.insecure: true
+  # RBAC: Keycloak group claim → ArgoCD role 매핑 (ADR-0001 매트릭스).
+  rbac:
+    policy.default: role:readonly
+    scopes: "[groups]"
+    policy.csv: |
+      g, team-platform, role:admin
+      g, team-security, role:readonly
+      g, team-observability, role:readonly
+      g, team-lab-data, role:readonly
+      g, team-ai, role:readonly
+      g, team-service, role:readonly
