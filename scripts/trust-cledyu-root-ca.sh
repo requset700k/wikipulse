@@ -56,15 +56,29 @@ fetch_certificate() {
     return
   fi
 
+  # 1순위: 레포 안의 PEM (Phase 4 영구화로 git 추적 중. kubectl/KUBECONFIG 의존성 0.)
+  local script_dir repo_root repo_pem
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  repo_root="$(cd "$script_dir/.." && pwd)"
+  repo_pem="$repo_root/infra/kubernetes/kubeconfig/cledyu-root-ca.pem"
+  if [[ -f "$repo_pem" ]]; then
+    cert_path="$repo_pem"
+    return
+  fi
+
+  # 2순위: cluster 에서 추출 (kubectl 동작 가능한 환경 — admin 머신 / CI 등)
   cert_path="$(mktemp "${TMPDIR:-/tmp}/cledyu-root-ca.XXXXXX.crt")"
   kubectl -n "$namespace" get secret "$secret_name" -o 'jsonpath={.data.tls\.crt}' |
     decode_base64 > "$cert_path"
 }
 
 install_macos() {
+  # `-r trustAsRoot`: 어떤 cert 든 root 로 강제 trust.
+  # `-r trustRoot` 는 keychain 의 issuer chain 검증에 따라 macOS 환경에서
+  # 가끔 거부됨. 우리 cledyu-root-ca 는 self-signed root 라 의미상 동일.
   sudo security add-trusted-cert \
     -d \
-    -r trustRoot \
+    -r trustAsRoot \
     -k /Library/Keychains/System.keychain \
     "$cert_path"
 }

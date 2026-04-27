@@ -15,14 +15,22 @@ if ($Kubeconfig) {
 }
 
 if (-not $CertificatePath) {
-  $CertificatePath = Join-Path $env:TEMP "cledyu-root-ca.crt"
-  $rootCaBase64 = & kubectl -n $Namespace get secret $SecretName -o "jsonpath={.data.tls\.crt}"
-  if ($LASTEXITCODE -ne 0 -or -not $rootCaBase64) {
-    throw "Failed to extract $SecretName public certificate from namespace $Namespace."
+  # 1순위: 레포 안의 PEM (Phase 4 영구화로 git 추적 중. kubectl/KUBECONFIG 의존성 0.)
+  $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+  $repoRoot = Resolve-Path (Join-Path $scriptDir "..")
+  $repoPem = Join-Path $repoRoot "infra\kubernetes\kubeconfig\cledyu-root-ca.pem"
+  if (Test-Path $repoPem) {
+    $CertificatePath = $repoPem
+  } else {
+    # 2순위: cluster 에서 추출 (kubectl 동작 가능한 환경)
+    $CertificatePath = Join-Path $env:TEMP "cledyu-root-ca.crt"
+    $rootCaBase64 = & kubectl -n $Namespace get secret $SecretName -o "jsonpath={.data.tls\.crt}"
+    if ($LASTEXITCODE -ne 0 -or -not $rootCaBase64) {
+      throw "Failed to extract $SecretName public certificate from namespace $Namespace."
+    }
+    [Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($rootCaBase64)) |
+      Set-Content -NoNewline -Encoding ascii $CertificatePath
   }
-
-  [Text.Encoding]::ASCII.GetString([Convert]::FromBase64String($rootCaBase64)) |
-    Set-Content -NoNewline -Encoding ascii $CertificatePath
 }
 
 $resolvedCertificatePath = (Resolve-Path $CertificatePath).Path
