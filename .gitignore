@@ -24,6 +24,9 @@ kubeconfig.*
 .kube-local/
 **/secrets/
 *.pem
+# 5명 분배용 kubeconfig (kubelogin OIDC, public CA only — sensitive 없음) 는 git commit 허용.
+!infra/kubernetes/kubeconfig/
+!infra/kubernetes/kubeconfig/**
 *.key
 !**/cloud-init/*.key
 *.pfx

@@ -1,0 +1,37 @@
+---
+# Cledyu kubeconfig — 5명 팀원 공유용 (sensitive 없음, git commit OK).
+# 사전: brew install int128/kubelogin/kubelogin
+# 사용: KUBECONFIG=$(pwd)/infra/kubernetes/kubeconfig/cledyu-oidc.yaml kubectl get nodes
+
+apiVersion: v1
+kind: Config
+clusters:
+  - name: cledyu
+    cluster:
+      server: https://10.10.0.10:6443
+      certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJTllxOFFLK0ZNOVF3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TmpBME1qUXdNVEkzTWpCYUZ3MHpOakEwTWpFd01UTXlNakJhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUURNRjNaeDBMdjRhRnNzRUQ3SXFUaTVnaTZ5MEYyQ3lzVkZjOTc2b09CblQwVHQwUFdMSDRvSlZjT28KK1hQSFVTYk45Y1h2d0lZZHcxSkZaMExPam9ieWZkWlJPTnc2SnZRUzFEbGI0cmgyUk53YmNxTE14NkR5WlFhSQp2d1lyWldoalRKdnpIMzY2OUFvUUxlbUx5Ty9LNjB0NUdIc3pnOSt0N2xHY2xjVmdLbW5hc1QyYjJnZGtjMnZRCjlqa3ZwQUNMQWpHTnlCNWpWamNINmx2SmlVSDNXMno1VS9RMUtnOUtlQ05FZHhRdE9xSUJ6ZnluZFFzeG5zUnMKbk44QXR4YnFlVHNHclBpeGUxU2RjVzhlY21nTlcvM2tRVXZrYWVLUm1DaUtWUGR3ekRzTkdRRTdnZjFZYlA5ZgozMWhjRUhrdi8zVjk2dFJ5aTloSDdBSEo2dzhYQWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJUQmZTN241M0VPdUZUNFpvcXUyK3JOdkI5TVJEQVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQ1JXY3NRNHBnawp0YzBxemhRYUs3bkN6aUZqa2ZzcEJmN2ZuZGlCT25FQnN6a0xwdm1XNmVENzlsU0NCa2d6R3ZFKzdVQkhnb1U2CkVzNmJYZFBUd1dKb2RtVmZuVTFySStLbzBoUEpzc2I3MnVXREw4U3Z6S0ZWWWRUWVNTQU53dW0zTnljdjB0WFAKYkxMSmRBakE4Zk1kTkp4OWRQS2ZWMC81VitKZWEwMW9nanJxVExYSG1CQlJwMW9nWUtneUdJZTNDUmdMMkI4dwpGM2VXYzJhUjFUMlVVVFpiOTFyM3VRS2RuQWlxckRHM3pid21uT3pLNzh1OEhpMkNQVVJkVDFMcDJhcll3a1NYClIxY3VzVE5VM3JWUzlod05qNUZnL2ZCV0hiSFJtT1plRmxSeXdsWm4xMG5rZHlvWUh5UDFWRDhxU2pRMjRaZU0KdDFWYWFNOHEyRmtrCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+contexts:
+  - name: cledyu
+    context:
+      cluster: cledyu
+      user: keycloak
+current-context: cledyu
+users:
+  - name: keycloak
+    user:
+      exec:
+        apiVersion: client.authentication.k8s.io/v1
+        command: kubectl-oidc_login
+        interactiveMode: IfAvailable
+        provideClusterInfo: false
+        args:
+          - get-token
+          - --oidc-issuer-url=https://keycloak.cledyu.local/realms/cledyu
+          - --oidc-client-id=kubectl
+          - --oidc-extra-scope=email
+          - --oidc-extra-scope=profile
+          - --certificate-authority=/Users/kylekim1223/request700k/cledyu/infra/kubernetes/kubeconfig/cledyu-root-ca.pem
+        installHint: |
+          kubectl-oidc_login (kubelogin) 미설치.
+          macOS:  brew install int128/kubelogin/kubelogin
+          Linux:  https://github.com/int128/kubelogin/releases

@@ -55,6 +55,22 @@ oidc_clients = {
     valid_post_logout_redirect_uris = ["https://grafana.cledyu.local/"]
     web_origins                     = ["https://grafana.cledyu.local"]
   }
+
+  kubectl = {
+    name                         = "Cledyu kubectl (oidc-login)"
+    access_type                  = "PUBLIC"
+    standard_flow_enabled        = true
+    direct_access_grants_enabled = false
+    implicit_flow_enabled        = false
+    service_accounts_enabled     = false
+    pkce_code_challenge_method   = "S256"
+    valid_redirect_uris = [
+      "http://localhost:8000",
+      "http://localhost:18000",
+      "http://127.0.0.1:8000",
+      "http://127.0.0.1:18000",
+    ]
+  }
 }
 
 oidc_client_secrets = {

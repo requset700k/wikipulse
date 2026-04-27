@@ -1,0 +1,15 @@
+---
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: restarted
+  become: true
+
+- name: Restart kube-apiserver pod
+  # static pod 라 kubelet 이 manifest mtime 변화 감지 시 자동 재시작.
+  # blockinfile 이 이미 mtime 갱신했지만, 명시적으로 touch 해서 reload 보장.
+  ansible.builtin.file:
+    path: "{{ kube_apiserver_manifest_path }}"
+    state: touch
+    mode: "0600"
+  become: true

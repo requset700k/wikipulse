@@ -1,0 +1,84 @@
+---
+# Keycloak group → Kubernetes ClusterRole 매핑.
+# kube-apiserver 의 --oidc-groups-claim=groups 가 JWT 의 groups claim 을 k8s
+# Group subject 로 매핑. ADR-0001 권한 매트릭스 동기화.
+#
+# 적용:
+#   kubectl apply -f infra/kubernetes/rbac/keycloak-bindings.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-team-platform-admin
+subjects:
+  - kind: Group
+    name: team-platform
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-team-security-view
+subjects:
+  - kind: Group
+    name: team-security
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-team-observability-view
+subjects:
+  - kind: Group
+    name: team-observability
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-team-lab-data-view
+subjects:
+  - kind: Group
+    name: team-lab-data
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-team-ai-view
+subjects:
+  - kind: Group
+    name: team-ai
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-team-service-view
+subjects:
+  - kind: Group
+    name: team-service
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io

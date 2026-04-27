@@ -1,0 +1,18 @@
+---
+# kube-apiserver 에 Keycloak OIDC 인증 통합 (Phase 4).
+# 5명 팀원이 자기 Keycloak 계정으로 kubectl 사용 → admin cert 분배 종속성 탈피.
+
+kube_apiserver_manifest_path: /etc/kubernetes/manifests/kube-apiserver.yaml
+kube_apiserver_oidc_ca_path: /etc/kubernetes/pki/oidc-ca.crt
+
+# 클러스터 내부 OIDC discovery 도메인 (kube-apiserver 가 직접 호출).
+kube_apiserver_oidc_issuer_host: keycloak.cledyu.local
+kube_apiserver_oidc_issuer_url: "https://{{ kube_apiserver_oidc_issuer_host }}/realms/cledyu"
+kube_apiserver_oidc_client_id: kubectl
+kube_apiserver_oidc_username_claim: preferred_username
+kube_apiserver_oidc_groups_claim: groups
+
+# 노드의 split DNS — cledyu.local 도메인을 CoreDNS (kube-dns) 로 위임.
+# kube-apiserver pod (host network) 가 internal 도메인 해석할 수 있게 한다.
+kube_apiserver_coredns_clusterip: "10.43.0.10"
+kube_apiserver_traefik_vip: "10.10.0.101"

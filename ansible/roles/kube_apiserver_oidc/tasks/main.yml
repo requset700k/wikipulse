@@ -1,0 +1,120 @@
+---
+# Phase 4 — kube-apiserver 에 Keycloak OIDC 인증 통합.
+# 멱등성: 모든 task 가 grep / 파일 비교 기반 — 재실행 안전.
+#
+# 배포 단계 (rolling 권장):
+#   ansible-playbook -i inventory.yml playbooks/82-kube-apiserver-oidc.yml --limit cp01
+#   # 검증 OK 후
+#   ansible-playbook -i inventory.yml playbooks/82-kube-apiserver-oidc.yml --limit cp02:cp03
+
+- name: Get cledyu-root-ca PEM from cluster (controller side)
+  delegate_to: localhost
+  run_once: true
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - -n
+      - cert-manager
+      - get
+      - secret
+      - cledyu-root-ca
+      - -o
+      - jsonpath={.data.tls\.crt}
+  register: kube_apiserver_oidc_ca_b64
+  changed_when: false
+  become: false
+
+- name: Decode cledyu-root-ca PEM
+  ansible.builtin.set_fact:
+    kube_apiserver_oidc_ca_pem: "{{ kube_apiserver_oidc_ca_b64.stdout | b64decode }}"
+
+- name: Distribute cledyu-root-ca to control plane nodes
+  ansible.builtin.copy:
+    content: "{{ kube_apiserver_oidc_ca_pem }}"
+    dest: "{{ kube_apiserver_oidc_ca_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  become: true
+
+- name: Ensure systemd-resolved drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  become: true
+
+- name: Configure split DNS — cledyu.local → CoreDNS (10.43.0.10)
+  ansible.builtin.copy:
+    dest: /etc/systemd/resolved.conf.d/cledyu.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Resolve]
+      DNS={{ kube_apiserver_coredns_clusterip }}
+      Domains=~cledyu.local
+  become: true
+  notify: Restart systemd-resolved
+
+- name: Add fallback /etc/hosts entry for keycloak.cledyu.local
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ kube_apiserver_traefik_vip }} {{ kube_apiserver_oidc_issuer_host }}"
+    state: present
+    backup: true
+  become: true
+
+- name: Backup current kube-apiserver manifest
+  ansible.builtin.copy:
+    src: "{{ kube_apiserver_manifest_path }}"
+    dest: "{{ kube_apiserver_manifest_path }}.bak-{{ ansible_date_time.iso8601_basic_short }}"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0600"
+  become: true
+
+- name: Inject OIDC flags into kube-apiserver command (idempotent)
+  ansible.builtin.blockinfile:
+    path: "{{ kube_apiserver_manifest_path }}"
+    insertafter: '^\s+- --advertise-address='
+    marker: "    # {mark} CLEDYU OIDC FLAGS"
+    block: |
+      - --oidc-issuer-url={{ kube_apiserver_oidc_issuer_url }}
+      - --oidc-client-id={{ kube_apiserver_oidc_client_id }}
+      - --oidc-username-claim={{ kube_apiserver_oidc_username_claim }}
+      - --oidc-groups-claim={{ kube_apiserver_oidc_groups_claim }}
+      - --oidc-ca-file={{ kube_apiserver_oidc_ca_path }}
+  become: true
+  notify: Restart kube-apiserver pod
+
+- name: Inject dnsConfig into kube-apiserver pod spec (Go resolver via CoreDNS)
+  ansible.builtin.shell: |
+    python3 - <<'PYEOF'
+    import yaml, sys
+    p = "{{ kube_apiserver_manifest_path }}"
+    with open(p) as f:
+        d = yaml.safe_load(f)
+    spec = d["spec"]
+    target_dnsconfig = {
+        "nameservers": ["{{ kube_apiserver_coredns_clusterip }}"],
+        "searches": ["cluster.local"],
+        "options": [{"name": "ndots", "value": "1"}],
+    }
+    if spec.get("dnsPolicy") == "None" and spec.get("dnsConfig") == target_dnsconfig:
+        print("UNCHANGED")
+        sys.exit(0)
+    spec["dnsPolicy"] = "None"
+    spec["dnsConfig"] = target_dnsconfig
+    with open(p, "w") as f:
+        yaml.dump(d, f, default_flow_style=False)
+    print("CHANGED")
+    PYEOF
+  register: kube_apiserver_oidc_dnsconfig
+  changed_when: "'CHANGED' in kube_apiserver_oidc_dnsconfig.stdout"
+  become: true
+  notify: Restart kube-apiserver pod

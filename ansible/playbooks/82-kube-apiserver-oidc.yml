@@ -1,0 +1,14 @@
+---
+# Phase 4 — kube-apiserver 에 Keycloak OIDC 인증 통합.
+# Rolling 권장:
+#   ansible-playbook -i ansible/inventory.yml ansible/playbooks/82-kube-apiserver-oidc.yml --limit cp01
+#   # cp01 검증 OK 후 (kubectl get nodes 정상)
+#   ansible-playbook -i ansible/inventory.yml ansible/playbooks/82-kube-apiserver-oidc.yml --limit cp02:cp03
+
+- name: Configure Keycloak OIDC on kube-apiserver
+  hosts: control_plane
+  gather_facts: true
+  serial: 1   # 한 노드씩 — apiserver lock-out 위험 최소화
+
+  roles:
+    - role: kube_apiserver_oidc
