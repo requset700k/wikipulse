@@ -21,64 +21,64 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: keycloak-team-security-view
+  name: keycloak-team-security-admin
 subjects:
   - kind: Group
     name: team-security
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: view
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: keycloak-team-observability-view
+  name: keycloak-team-observability-admin
 subjects:
   - kind: Group
     name: team-observability
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: view
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: keycloak-team-lab-data-view
+  name: keycloak-team-lab-data-admin
 subjects:
   - kind: Group
     name: team-lab-data
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: view
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: keycloak-team-ai-view
+  name: keycloak-team-ai-admin
 subjects:
   - kind: Group
     name: team-ai
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: view
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: keycloak-team-service-view
+  name: keycloak-team-service-admin
 subjects:
   - kind: Group
     name: team-service
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
-  name: view
+  name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
