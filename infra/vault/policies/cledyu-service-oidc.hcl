@@ -10,6 +10,14 @@ path "cledyu/data/oidc/tutor" {
   capabilities = ["read"]
 }
 
-path "cledyu/metadata/oidc/*" {
-  capabilities = ["read", "list"]
+path "cledyu/metadata/oidc/web" {
+  capabilities = ["read"]
+}
+
+path "cledyu/metadata/oidc/api" {
+  capabilities = ["read"]
+}
+
+path "cledyu/metadata/oidc/tutor" {
+  capabilities = ["read"]
 }

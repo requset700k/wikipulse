@@ -32,6 +32,9 @@ kubeconfig.*
 *.pfx
 *.p12
 
+# Vault bootstrap secrets (root token + unseal keys)
+vault-bootstrap*.json
+
 # OS / 에디터
 .DS_Store
 .vscode/
