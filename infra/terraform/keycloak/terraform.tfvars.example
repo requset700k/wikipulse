@@ -136,3 +136,26 @@ team_member_initial_passwords = {
   yangsungho     = "REPLACE_WITH_TEMP_PASSWORD"
   hanjeonghyeon  = "REPLACE_WITH_TEMP_PASSWORD"
 }
+
+# Master realm super-admin (ADR-0001 §13)
+# 신규 super-admin 추가 시 여기에 한 줄. terraform apply 후 1Password 에
+# 임시 비번 등록하고 사용자에게 안전 채널로 전달.
+master_super_admins = {
+  kylekim = {
+    username   = "kylekim"
+    email      = "kylekim@example.invalid"
+    first_name = "Yonggyun"
+    last_name  = "Kim"
+  }
+  yunseungho = {
+    username   = "yunseungho"
+    email      = "yunseungho@example.invalid"
+    first_name = "Seungho"
+    last_name  = "Yun"
+  }
+}
+
+master_admin_initial_passwords = {
+  kylekim    = "REPLACE_WITH_TEMP_PASSWORD"
+  yunseungho = "REPLACE_WITH_TEMP_PASSWORD"
+}
