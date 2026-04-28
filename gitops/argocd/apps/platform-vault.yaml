@@ -1,0 +1,42 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-vault
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://helm.releases.hashicorp.com
+      chart: vault
+      targetRevision: 0.32.0
+      helm:
+        releaseName: vault
+        valueFiles:
+          - $values/gitops/apps/vault/values.yaml
+    - repoURL: https://github.com/requset700k/Cledyu.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/requset700k/Cledyu.git
+      targetRevision: main
+      path: gitops/apps/vault
+      directory:
+        include: "{namespace.yaml,certificate.yaml,serverstransport.yaml,ingress.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,42 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-tls
+  namespace: vault
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: vault-tls
+  duration: 2160h
+  renewBefore: 720h
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: cledyu-ca
+  commonName: vault.cledyu.local
+  dnsNames:
+    - vault.cledyu.local
+    - vault
+    - vault.vault
+    - vault.vault.svc
+    - vault.vault.svc.cluster.local
+    - vault-active
+    - vault-active.vault
+    - vault-active.vault.svc
+    - vault-active.vault.svc.cluster.local
+    - vault-internal
+    - vault-internal.vault
+    - vault-internal.vault.svc
+    - vault-internal.vault.svc.cluster.local
+    - "*.vault-internal"
+    - "*.vault-internal.vault"
+    - "*.vault-internal.vault.svc"
+    - "*.vault-internal.vault.svc.cluster.local"
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth

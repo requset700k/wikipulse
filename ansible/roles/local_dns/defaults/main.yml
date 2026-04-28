@@ -4,3 +4,5 @@ local_dns_windows_hosts_file: C:\Windows\System32\drivers\etc\hosts
 local_dns_entries:
   - ip: 10.10.0.101
     hostname: keycloak.cledyu.local
+  - ip: 10.10.0.101
+    hostname: vault.cledyu.local
