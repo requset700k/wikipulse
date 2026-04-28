@@ -91,4 +91,7 @@ keycloak-foundation-up: ## keycloak operator + postgres foundation (single defau
 client-trust-up: ## install Cledyu root CA on client trust targets
 	ansible-playbook $(ANSIBLE_DIR)/playbooks/81-client-trust.yml
 
-.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up keycloak-foundation-up client-trust-up metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url
+vault-bootstrap-configure: ## configure Vault Kubernetes auth, policies, and initial secret migration
+	powershell.exe -ExecutionPolicy Bypass -File scripts/vault-bootstrap-configure.ps1
+
+.PHONY: help host-prep kvm-init kvm-plan kvm-apply kvm-destroy vm-prep k8s-bootstrap cilium-up cert-manager-up keycloak-foundation-up client-trust-up vault-bootstrap-configure metallb-up longhorn-up platform-up tailscale-up argocd-up argocd-password argocd-url

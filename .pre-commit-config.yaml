@@ -83,7 +83,7 @@ repos:
         entry: kubeconform
         language: system
         files: ^(gitops/|infra/kubernetes/).*\.ya?ml$
-        exclude: (values\.ya?ml|Chart\.ya?ml|kustomization\.ya?ml)$
+        exclude: (values[^/]*\.ya?ml|Chart\.ya?ml|kustomization\.ya?ml)$
         args:
           - -ignore-missing-schemas
           - -schema-location

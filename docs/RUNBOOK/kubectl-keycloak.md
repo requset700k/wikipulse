@@ -102,7 +102,7 @@ echo "export KUBECONFIG=$(pwd)/infra/kubernetes/kubeconfig/cledyu-oidc.yaml" >> 
 | `interactiveMode must be specified` | kubeconfig exec spec 에 `interactiveMode` 누락 | `interactiveMode: IfAvailable` 추가 |
 | `tls: failed to verify certificate: x509: certificate signed by unknown authority` | kubeconfig 의 `certificate-authority-data` 가 실제 cluster CA 불일치 | `kubectl --kubeconfig=admin.conf config view --raw -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'` 로 진짜 CA 추출 후 갱신 |
 | `oidc authenticator: ... lookup keycloak.cledyu.local on 1.1.1.1:53: no such host` | kube-apiserver 가 노드의 default DNS (1.1.1.1) 사용 → cledyu.local 모름 | role 의 `dnsConfig` (CoreDNS 단독) 적용 확인 — `kubectl -n kube-system get pod kube-apiserver-cp01 -o jsonpath='{.spec.dnsPolicy}'` → `None` |
-| `forbidden: User ... cannot get nodes` | ClusterRoleBinding 의 group claim 매칭 실패 | JWT decode 해서 `groups` claim 값 확인 (`kubectl-oidc_login get-token --oidc-issuer-url=... --oidc-client-id=kubectl | jq -r .status.token | cut -d. -f2 | base64 -d | jq .groups`) |
+| `forbidden: User ... cannot get nodes` | ClusterRoleBinding 의 group claim 매칭 실패 | JWT decode 해서 `groups` claim 값 확인 (`kubectl-oidc_login get-token --oidc-issuer-url=... --oidc-client-id=kubectl \| jq -r .status.token \| cut -d. -f2 \| base64 -d \| jq .groups`) |
 | `error: interactiveMode must be specified for keycloak to use exec authentication plugin` | kubectl >= 1.26 의 exec credential 새 요건 | kubeconfig 의 user.exec 에 `interactiveMode: IfAvailable` |
 | Pod 가 새 manifest 인식 안 함 | kubelet 의 manifest 변경 감지 누락 | `sudo touch /etc/kubernetes/manifests/kube-apiserver.yaml` |
 | `kubectl-oidc_login: command not found` | kubelogin 미설치 | `brew install int128/kubelogin/kubelogin` |

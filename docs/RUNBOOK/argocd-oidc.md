@@ -89,7 +89,7 @@ curl -sk https://argocd.cledyu.local/api/v1/settings | jq '.oidcConfig.name'
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
-| `LOG IN VIA KEYCLOAK` 버튼 안 뜸 | `argocd-cm` 의 `oidc.config` YAML parse 에러 | `kubectl -n argocd logs -l app=argocd-server | grep oidc` 로 line 번호 확인. 보통 nested block scalar (`rootCA: |`) 의 들여쓰기. |
+| `LOG IN VIA KEYCLOAK` 버튼 안 뜸 | `argocd-cm` 의 `oidc.config` YAML parse 에러 | `kubectl -n argocd logs -l app=argocd-server \| grep oidc` 로 line 번호 확인. 보통 nested block scalar (`rootCA: \|`) 의 들여쓰기. |
 | `dial tcp: lookup keycloak.cledyu.local on 10.43.0.10:53: no such host` | CoreDNS hosts plugin 에 미등록 | 위 §3 step 2 (configmap 적용 + restart) |
 | `invalid_scope: openid profile email groups` | Keycloak realm 에 `groups` client scope 미등록 | Quick fix: values.yaml 의 `requestedScopes` 에서 `groups` 제거. Proper fix: Terraform 에 `keycloak_openid_client_scope "groups"` 추가 (후속 PR). |
 | `http: named cookie not present` | 비번 변경 등으로 OIDC state cookie expire | 사이트 데이터 (cookie) 삭제 또는 incognito 로 재시도 |

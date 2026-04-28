@@ -27,3 +27,40 @@ terraform output ansible_inventory > ../../../ansible/inventory.yml
 ```bash
 terraform destroy    # VM/볼륨/cloud-init ISO 모두 삭제
 ```
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
+
+## Providers
+
+No providers.
+
+## Modules
+
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_kvm"></a> [kvm](#module\_kvm) | ../../kvm | n/a |
+
+## Resources
+
+No resources.
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_libvirt_uri"></a> [libvirt\_uri](#input\_libvirt\_uri) | libvirt URI. 로컬 실행시 qemu:///system, 원격시 qemu+ssh://ubuntu@<호스트>/system | `string` | n/a | yes |
+| <a name="input_ssh_authorized_key"></a> [ssh\_authorized\_key](#input\_ssh\_authorized\_key) | cloud-init 으로 주입할 SSH 공개키 내용 | `string` | n/a | yes |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_ansible_inventory"></a> [ansible\_inventory](#output\_ansible\_inventory) | n/a |
+| <a name="output_control_plane_ips"></a> [control\_plane\_ips](#output\_control\_plane\_ips) | n/a |
+| <a name="output_nodes"></a> [nodes](#output\_nodes) | n/a |
+<!-- END_TF_DOCS -->
