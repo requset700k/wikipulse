@@ -67,7 +67,11 @@ server:
     annotations:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
-    tls: true
+    # tls: true 는 chart 가 argocd-server-tls 자동 생성 시도 → 우리 cert-manager
+    # 의 argocd-tls 와 Ingress.spec.tls[] 에 두 entry 가 중복 → Traefik 이 어느
+    # secretName 을 sniff 할지 혼란 → default cert fallback 응답.
+    # tls: false + extraTls 만 사용해서 우리 인증서 1개로 명확화.
+    tls: false
     extraTls:
       - hosts:
           - argocd.cledyu.local

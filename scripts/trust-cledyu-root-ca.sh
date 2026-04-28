@@ -73,14 +73,15 @@ fetch_certificate() {
 }
 
 install_macos() {
-  # `-r trustAsRoot`: 어떤 cert 든 root 로 강제 trust.
-  # `-r trustRoot` 는 keychain 의 issuer chain 검증에 따라 macOS 환경에서
-  # 가끔 거부됨. 우리 cledyu-root-ca 는 self-signed root 라 의미상 동일.
-  sudo security add-trusted-cert \
-    -d \
-    -r trustAsRoot \
-    -k /Library/Keychains/System.keychain \
-    "$cert_path"
+  # macOS Sequoia (15+) 에서 SecTrustSettingsSetTrustSettings 가 까다로워짐.
+  # `-r` 옵션을 명시하면 cert 의 self-signed root 여부 / option 조합에
+  # 따라 거부됨. 옵션 없이 호출하면 macOS 가 cert 자체를 보고 적절한
+  # trust mode 자동 결정 (self-signed root → trustRoot).
+  #
+  # System keychain (-d -k /Library/Keychains/System.keychain) 도 SIP 강화로
+  # GUI prompt 강제될 수 있음. user keychain (default) 으로 등록하면
+  # sudo 불필요 + Sequoia 에서도 안정적 동작. 본인 사용자 세션에만 적용.
+  security add-trusted-cert -k "$HOME/Library/Keychains/login.keychain-db" "$cert_path"
 }
 
 install_linux() {
