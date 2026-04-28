@@ -16,6 +16,9 @@ spec:
         releaseName: vault
         valueFiles:
           - $values/gitops/apps/vault/values.yaml
+          # GCP KMS auto-unseal (migration 단계: extraArgs="-migrate" 포함).
+          # migration 완료 후 별도 PR 로 -migrate 제거.
+          - $values/gitops/apps/vault/values-gcpckms.yaml
     - repoURL: https://github.com/requset700k/Cledyu.git
       targetRevision: main
       ref: values
