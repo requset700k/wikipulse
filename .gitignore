@@ -58,6 +58,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Go 로컬 설정 (config.example.yaml만 커밋)
+apps/api/config.yaml
+
 # 로컬 임시
 /tmp/
 scratch/
