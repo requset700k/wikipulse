@@ -91,3 +91,21 @@ variable "team_member_initial_passwords" {
   type        = map(string)
   sensitive   = true
 }
+
+variable "master_super_admins" {
+  description = "Master realm super-admin users (ADR-0001 §13). lifecycle.ignore_changes 로 비번 reset 강제 방지."
+  type = map(object({
+    username   = string
+    email      = string
+    first_name = string
+    last_name  = string
+  }))
+  default = {}
+}
+
+variable "master_admin_initial_passwords" {
+  description = "Master realm super-admin 의 초기 임시 비번. 1Password 보관 후 첫 로그인 시 변경 강제."
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}
