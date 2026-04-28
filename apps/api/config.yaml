@@ -1,0 +1,28 @@
+server:
+  addr: ":8080"
+  mode: "debug" # debug | release
+
+database:
+  url: "postgres://postgres:postgres@localhost:5432/cledyu?sslmode=disable"
+
+redis:
+  addr: "localhost:6379"
+  password: ""
+  db: 0
+
+auth:
+  keycloak_url: ""           # e.g. https://auth.kt-techuplabs.internal
+  keycloak_realm: "techuplabs"
+  client_id: "cledyu-backend"
+  client_secret: ""
+  redirect_url: "http://localhost:8080/api/v1/auth/callback"
+
+vm:
+  provider: "hybrid"         # kubevirt | ec2 | hybrid
+  kubevirt_namespace: "lab-sessions"
+  ec2_region: "ap-northeast-2"
+  ec2_ami: ""
+  ec2_instance_type: "t3.medium"
+
+ai:
+  bff_url: ""                # e.g. http://ai-bff:8000

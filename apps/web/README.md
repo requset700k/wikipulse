@@ -10,7 +10,8 @@ Next.js 14 (App Router) 기반 학습자/강사 UI.
 | 언어 | TypeScript |
 | 스타일 | Tailwind CSS |
 | 서버 상태 | TanStack Query v5 |
-| 터미널 | xterm.js + WebSocket |
+| 터미널 | @xterm/xterm + WebSocket |
+| 패키지 매니저 | pnpm |
 | 컨테이너 | distroless/nodejs20-debian12 |
 
 ## 페이지 구조
@@ -40,7 +41,7 @@ pnpm dev        # http://localhost:3000
 | `BACKEND_URL` | 런타임 (서버) | `http://localhost:8080` | Next.js rewrite 대상. HTTP `/api/*` 프록시 |
 | `NEXT_PUBLIC_WS_URL` | **빌드 타임** | `ws://localhost:8080` | 터미널 WebSocket URL (브라우저 직접 연결) |
 
-> **주의** — `NEXT_PUBLIC_*` 변수는 `npm run build` 시점에 JS 번들에 포함됨.
+> **주의** — `NEXT_PUBLIC_*` 변수는 `pnpm build` 시점에 JS 번들에 포함됨.
 > 런타임 env로 주입해도 반영되지 않음.
 > 백엔드 외부 URL 확정 후 Dockerfile `--build-arg`로 전달 필요.
 
