@@ -24,8 +24,6 @@
 # - 변경 전 스냅샷 및 롤백 절차 확인
 
 server:
-  # Migration flag — Shamir → gcpckms 전환 시점에만 사용. migration 완료 후 제거.
-  extraArgs: "-migrate"
   extraEnvironmentVars:
     GOOGLE_APPLICATION_CREDENTIALS: /vault/userconfig/gcp-kms/key.json
 
