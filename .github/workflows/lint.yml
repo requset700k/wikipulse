@@ -71,26 +71,19 @@ jobs:
           sudo tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
           sudo chmod +x /usr/local/bin/kubeconform
 
-      - name: Set up Go
-        # golangci-lint v2 는 Go runtime 필수. apps/ 에 Go 모듈 없으면 cache miss
-        # 무관 (hook 자체가 no-op). pre-commit golangci-lint hook 만 enable.
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache: false
-
-      - name: Install golangci-lint
-        # 공식 setup action: install.sh 의 master URL 변동성 회피 (v2 출시 후
-        # master 가 v2-only 로 전환되어 v1.62.2 다운로드 실패 발생).
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.62.2
-          install-mode: binary
-          # pre-commit 가 hook 직접 실행하므로 lint run X — 설치만.
-          # action 의 default lint run 을 끄고 binary 만 PATH 에 둠.
-          skip-cache: true
-          only-new-issues: false
-          args: --version
+      - name: Install golangci-lint (release tarball)
+        # 기존 install.sh 가 master 분기 변동성 (v2 전환) 으로 실패.
+        # 공식 setup-action 은 자동 lint run 강제라 install-only 시나리오에 부적합.
+        # 가장 안정적인 방법: GitHub release tarball 직접 다운로드.
+        run: |
+          VERSION=v1.62.2
+          ARCH=linux-amd64
+          curl -sSL -o /tmp/glci.tgz \
+            "https://github.com/golangci/golangci-lint/releases/download/${VERSION}/golangci-lint-${VERSION#v}-${ARCH}.tar.gz"
+          tar -xzf /tmp/glci.tgz -C /tmp
+          sudo install -m 0755 /tmp/golangci-lint-${VERSION#v}-${ARCH}/golangci-lint /usr/local/bin/golangci-lint
+          rm -rf /tmp/glci.tgz /tmp/golangci-lint-${VERSION#v}-${ARCH}
+          golangci-lint --version
 
       - name: Install ansible-core and collections
         # ansible-lint 는 모듈 경로를 해석할 때 ~/.ansible/collections 를 탐색.
