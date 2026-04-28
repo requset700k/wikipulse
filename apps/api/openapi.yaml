@@ -1,0 +1,672 @@
+openapi: "3.1.0"
+
+info:
+  title: KT Tech-Up Labs API
+  version: "0.1.0"
+  description: VM 기반 Hands-on 교육 플랫폼 백엔드 API
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: system
+  - name: auth
+  - name: labs
+  - name: sessions
+  - name: instructor
+  - name: gamification
+
+# ─── Shared Schemas ──────────────────────────────────────────────────────────
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+
+    Lab:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "lab-001"
+        title:
+          type: string
+          example: "Linux Basics"
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        duration_min:
+          type: integer
+          example: 60
+        tags:
+          type: array
+          items:
+            type: string
+        vm_type:
+          type: string
+          enum: [small, medium]
+        step_count:
+          type: integer
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+        lab_id:
+          type: string
+        user_id:
+          type: string
+        status:
+          type: string
+          enum: [provisioning, ready, active, completed, failed]
+        vm_provider:
+          type: string
+          enum: [kubevirt, ec2]
+        terminal_url:
+          type: string
+          description: WebSocket URL for terminal connection
+        current_step:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+    StepProgress:
+      type: object
+      properties:
+        step_id:
+          type: integer
+        status:
+          type: string
+          enum: [pending, active, passed, failed]
+        attempts:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [student, instructor, admin]
+        points:
+          type: integer
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        name:
+          type: string
+        points:
+          type: integer
+        badges:
+          type: integer
+
+    Badge:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        earned_at:
+          type: string
+          format: date-time
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+
+paths:
+
+  /health:
+    get:
+      tags: [system]
+      summary: Health check
+      responses:
+        "200":
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  version:
+                    type: string
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /api/v1/auth/login:
+    get:
+      tags: [auth]
+      summary: Initiate Keycloak OIDC login
+      description: Redirects to Keycloak authorization endpoint.
+      responses:
+        "302":
+          description: Redirect to Keycloak
+        "503":
+          description: Auth not configured
+
+  /api/v1/auth/callback:
+    get:
+      tags: [auth]
+      summary: OIDC callback
+      description: Exchanges authorization code for JWT, sets HTTP-only cookie.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: Redirect to /labs on success
+        "400":
+          description: Invalid code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Logged out
+
+  # ── User ──────────────────────────────────────────────────────────────────
+
+  /api/v1/me:
+    get:
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/me/badges:
+    get:
+      tags: [gamification]
+      summary: Get my badges
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Badge list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Badge"
+                  total:
+                    type: integer
+
+  # ── Labs ──────────────────────────────────────────────────────────────────
+
+  /api/v1/labs:
+    get:
+      tags: [labs]
+      summary: List available labs
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: difficulty
+          in: query
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced]
+        - name: tag
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lab list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lab"
+                  total:
+                    type: integer
+
+  /api/v1/labs/{id}:
+    get:
+      tags: [labs]
+      summary: Get lab detail
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lab detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lab"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Sessions ──────────────────────────────────────────────────────────────
+
+  /api/v1/sessions:
+    post:
+      tags: [sessions]
+      summary: Create session (provision VM)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lab_id]
+              properties:
+                lab_id:
+                  type: string
+      responses:
+        "201":
+          description: Session created, VM provisioning started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "409":
+          description: Active session already exists for this lab
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/v1/sessions/{id}:
+    get:
+      tags: [sessions]
+      summary: Get session status
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [sessions]
+      summary: Terminate session (destroy VM)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Session terminated
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/sessions/{id}/ws:
+    get:
+      tags: [sessions]
+      summary: Terminal WebSocket connection
+      description: |
+        Upgrades to WebSocket. Proxies stdin/stdout to VM via SSH.
+        Use cookie auth — Authorization header not available in WS handshake.
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "101":
+          description: WebSocket upgrade successful
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/sessions/{id}/validate:
+    post:
+      tags: [sessions]
+      summary: Trigger step validation
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step_id]
+              properties:
+                step_id:
+                  type: integer
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [pass, fail, pending]
+                  message:
+                    type: string
+
+  /api/v1/sessions/{id}/hint:
+    post:
+      tags: [sessions]
+      summary: Request AI hint
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step_id, hint_level]
+              properties:
+                step_id:
+                  type: integer
+                hint_level:
+                  type: integer
+                  minimum: 1
+                  maximum: 3
+                terminal_history:
+                  type: string
+                  description: Last N lines of terminal output for context
+      responses:
+        "200":
+          description: Hint response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hint_text:
+                    type: string
+                  related_docs:
+                    type: array
+                    items:
+                      type: string
+                  hints_remaining:
+                    type: integer
+        "429":
+          description: Rate limit exceeded
+
+  /api/v1/sessions/{id}/steps:
+    get:
+      tags: [sessions]
+      summary: Get step progress
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Step progress list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StepProgress"
+
+  /api/v1/sessions/{id}/steps/{stepId}:
+    put:
+      tags: [sessions]
+      summary: Update step status
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: stepId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, passed, failed]
+      responses:
+        "200":
+          description: Updated step progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StepProgress"
+
+  # ── Gamification ──────────────────────────────────────────────────────────
+
+  /api/v1/leaderboard:
+    get:
+      tags: [gamification]
+      summary: Get leaderboard
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeaderboardEntry"
+                  total:
+                    type: integer
+
+  # ── Instructor ────────────────────────────────────────────────────────────
+
+  /api/v1/instructor/sessions:
+    get:
+      tags: [instructor]
+      summary: List all active sessions
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Active session list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/instructor/sessions/{id}/ws:
+    get:
+      tags: [instructor]
+      summary: Read-only terminal WebSocket (watch mode)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "101":
+          description: WebSocket upgrade (read-only stream)
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/instructor/sessions/{id}/inject:
+    post:
+      tags: [instructor]
+      summary: Inject a one-time command into student terminal
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                command:
+                  type: string
+      responses:
+        "200":
+          description: Command injected
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+# ─── Reusable Responses ──────────────────────────────────────────────────────
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Insufficient role
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

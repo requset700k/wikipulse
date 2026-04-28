@@ -58,5 +58,6 @@
 - [ ] `nlp-batch-reprocess.md`
 
 ### 서비스 — 한정현
+- [x] `service-web.md`
 - [ ] `lambda-alert-fail.md`
 - [ ] `cloudfront-cache-invalidation.md`

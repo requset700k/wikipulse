@@ -1,0 +1,23 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/requset700k/web
+  # sha-0000000은 placeholder. feat/service-init이 main에 머지되면
+  # GitHub Actions 로그에서 실제 sha-<7자>를 확인 후 교체.
+  tag: sha-0000000
+  pullPolicy: IfNotPresent
+
+backend:
+  url: http://api.api.svc.cluster.local:8080
+
+ingress:
+  host: app.cledyu.local
+  tlsSecret: web-tls
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

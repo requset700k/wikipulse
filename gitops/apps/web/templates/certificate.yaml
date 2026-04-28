@@ -1,0 +1,27 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: web-tls
+  namespace: web
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  secretName: {{ .Values.ingress.tlsSecret }}
+  duration: "2160h"
+  renewBefore: "720h"
+  commonName: {{ .Values.ingress.host }}
+  dnsNames:
+    - {{ .Values.ingress.host }}
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  issuerRef:
+    name: cledyu-ca
+    kind: ClusterIssuer
+    group: cert-manager.io

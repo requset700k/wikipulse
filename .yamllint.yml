@@ -33,5 +33,7 @@ ignore: |
   node_modules/
   infra/terraform/**/.terraform/
   **/charts/*/templates/
+  gitops/apps/*/templates/
   **/vendor/
   ansible/.omc/
+  apps/web/pnpm-lock.yaml

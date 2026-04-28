@@ -1,0 +1,83 @@
+// 백엔드 API와 주고받는 도메인 타입 정의.
+// Go 백엔드의 domain/ 패키지 구조와 1:1 대응.
+
+/** Lab 난이도 — 카탈로그 필터 및 카드 색상에 사용 */
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
+/**
+ * Lab 세션 상태 흐름:
+ * provisioning → ready → active → completed
+ *                              ↘ failed (VM 부팅 실패 시)
+ */
+export type SessionStatus = 'provisioning' | 'ready' | 'active' | 'completed' | 'failed';
+
+/** VM 프로바이더 — 온프렘 KubeVirt 또는 AWS EC2 오버플로우 */
+export type VMProvider = 'kubevirt' | 'ec2';
+
+/** 단계별 진행 상태 — StepList 컴포넌트의 아이콘/색상 결정에 사용 */
+export type StepStatus = 'pending' | 'active' | 'passed' | 'failed';
+
+/** instructor 역할은 /instructor 대시보드 접근 + 강사 API 사용 가능 */
+export type UserRole = 'student' | 'instructor' | 'admin';
+
+/** Lab 카탈로그에 표시되는 실습 항목 */
+export interface Lab {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: Difficulty;
+  duration_min: number;
+  tags: string[];
+  vm_type: string; // Lab 실행에 필요한 VM 사양 (kt-lab-small | medium)
+  step_count: number;
+}
+
+/** 수강생 1명이 특정 Lab을 수행하는 동안 유지되는 세션 */
+export interface Session {
+  id: string;
+  lab_id: string;
+  user_id: string;
+  status: SessionStatus;
+  vm_provider?: VMProvider;
+  terminal_url?: string; // status가 ready가 되면 채워짐 (/api/v1/sessions/:id/ws)
+  current_step: number;
+  started_at: string;
+  expires_at: string; // 세션 최대 유지 시간 3시간
+}
+
+/** 세션 내 개별 단계의 진행 상황 */
+export interface StepProgress {
+  step_id: number;
+  status: StepStatus;
+  attempts: number; // 검증 시도 횟수
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  points: number; // Gamification 포인트 (Month 2)
+}
+
+/** 수료/달성 시 지급되는 배지 (Month 2) */
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  earned_at: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  name: string;
+  points: number;
+  badges: number;
+}
+
+/** API 에러 응답 공통 포맷 */
+export interface ApiError {
+  error: string;
+  code?: string;
+}

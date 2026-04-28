@@ -1,0 +1,28 @@
+name: build-web
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - apps/web/**
+      - .github/workflows/build-image.yml
+      - .github/workflows/build-web.yml
+  push:
+    branches: [main]
+    paths:
+      - apps/web/**
+      - .github/workflows/build-image.yml
+      - .github/workflows/build-web.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    uses: ./.github/workflows/build-image.yml
+    with:
+      context: apps/web
+      image-name: web
+    secrets: inherit
