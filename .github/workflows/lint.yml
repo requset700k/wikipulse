@@ -71,12 +71,26 @@ jobs:
           sudo tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
           sudo chmod +x /usr/local/bin/kubeconform
 
+      - name: Set up Go
+        # golangci-lint v2 는 Go runtime 필수. apps/ 에 Go 모듈 없으면 cache miss
+        # 무관 (hook 자체가 no-op). pre-commit golangci-lint hook 만 enable.
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: false
+
       - name: Install golangci-lint
-        # pre-commit 의 local hook (entry: golangci-lint) 이 시스템 바이너리 사용.
-        # apps/ 안에 Go 모듈 없으면 hook 의 for-loop 이 즉시 종료 → no-op.
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-            | sudo sh -s -- -b /usr/local/bin v1.62.2
+        # 공식 setup action: install.sh 의 master URL 변동성 회피 (v2 출시 후
+        # master 가 v2-only 로 전환되어 v1.62.2 다운로드 실패 발생).
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.62.2
+          install-mode: binary
+          # pre-commit 가 hook 직접 실행하므로 lint run X — 설치만.
+          # action 의 default lint run 을 끄고 binary 만 PATH 에 둠.
+          skip-cache: true
+          only-new-issues: false
+          args: --version
 
       - name: Install ansible-core and collections
         # ansible-lint 는 모듈 경로를 해석할 때 ~/.ansible/collections 를 탐색.
