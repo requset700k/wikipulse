@@ -103,5 +103,5 @@ jobs:
         if: steps.pkg.outputs.found == 'true'
         run: |
           for dir in $(git ls-files '**/pnpm-lock.yaml' | sed 's|/pnpm-lock.yaml||'); do
-            pnpm --dir "$dir" run lint --if-present
+            pnpm --dir "$dir" run --if-present lint
           done
