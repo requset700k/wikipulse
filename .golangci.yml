@@ -7,7 +7,7 @@ run:
   timeout: 5m
 
 linters:
-  disable-all: true
+  default: none
   enable:
     # 정확성
     - errcheck
@@ -49,11 +49,10 @@ formatters:
     - goimports
 
 issues:
-  exclusions:
-    rules:
-      # 테스트 코드는 보안 룰/에러체크 일부 완화
-      - path: _test\.go
-        linters: [gosec, errcheck]
+  exclude-rules:
+    # 테스트 코드는 보안 룰/에러체크 일부 완화
+    - path: _test\.go
+      linters: [gosec, errcheck]
   # 같은 메시지 동일 라인 반복 표시 방지
   max-same-issues: 0
   max-issues-per-linter: 0

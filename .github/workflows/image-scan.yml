@@ -95,7 +95,7 @@ jobs:
           load: true
           tags: ${{ steps.ctx.outputs.tag }}
 
-      - name: Trivy scan (fail on HIGH/CRITICAL)
+      - name: Trivy scan (PR 정보성 스캔 — 보안 게이트는 build-image.yml main push에서 수행)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ctx.outputs.tag }}
@@ -103,7 +103,7 @@ jobs:
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           vuln-type: os,library
 
       - name: Upload SARIF to code scanning
