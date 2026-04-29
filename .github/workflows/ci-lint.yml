@@ -73,8 +73,10 @@ jobs:
         id: pkg
         run: |
           set -euo pipefail
-          if git ls-files '**/package.json' | grep -q .; then
+          pkgdir=$(git ls-files '**/package.json' | head -1 | xargs -I{} dirname {} 2>/dev/null || echo "")
+          if [ -n "$pkgdir" ]; then
             echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "dir=$pkgdir" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
             echo "No package.json — eslint steps will be skipped."
@@ -91,8 +93,10 @@ jobs:
 
       - name: Install deps
         if: steps.pkg.outputs.found == 'true'
+        working-directory: ${{ steps.pkg.outputs.dir }}
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
         if: steps.pkg.outputs.found == 'true'
+        working-directory: ${{ steps.pkg.outputs.dir }}
         run: pnpm lint
