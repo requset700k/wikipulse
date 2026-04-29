@@ -47,12 +47,3 @@ formatters:
   enable:
     - gofmt
     - goimports
-
-issues:
-  exclude-rules:
-    # 테스트 코드는 보안 룰/에러체크 일부 완화
-    - path: _test\.go
-      linters: [gosec, errcheck]
-  # 같은 메시지 동일 라인 반복 표시 방지
-  max-same-issues: 0
-  max-issues-per-linter: 0
