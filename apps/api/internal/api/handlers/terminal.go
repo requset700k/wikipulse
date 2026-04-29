@@ -5,7 +5,6 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -45,10 +44,10 @@ func (h *Handler) TerminalWS(c *gin.Context) {
 		h.log.Error("ws upgrade", zap.Error(err))
 		return
 	}
-	defer conn.Close()
+	defer conn.Close() //nolint:errcheck
 	// WebSocket 연결은 장시간 유지되므로 데드라인 제거
-	conn.SetReadDeadline(time.Time{})
-	conn.SetWriteDeadline(time.Time{})
+	_ = conn.SetReadDeadline(time.Time{})
+	_ = conn.SetWriteDeadline(time.Time{})
 
 	if provider == vm.ProviderStub || port == 0 {
 		h.runLocalShell(conn, sessionID) // 개발 모드: 로컬 bash
@@ -79,7 +78,7 @@ func (h *Handler) runLocalShell(conn *websocket.Conn, sessionID string) {
 		if cmd.Process != nil {
 			cmd.Process.Kill() //nolint:errcheck
 		}
-		ptmx.Close()
+		_ = ptmx.Close()
 		h.terminals.Remove(sessionID)
 		h.log.Info("terminal unregistered", zap.String("session", sessionID))
 	}()
@@ -118,9 +117,9 @@ func (h *Handler) InstructorTerminalWS(c *gin.Context) {
 	if err != nil {
 		return
 	}
-	defer conn.Close()
-	conn.SetReadDeadline(time.Time{})
-	conn.SetWriteDeadline(time.Time{})
+	defer conn.Close() //nolint:errcheck
+	_ = conn.SetReadDeadline(time.Time{})
+	_ = conn.SetWriteDeadline(time.Time{})
 
 	entry, ok := h.terminals.Get(sessionID)
 	if !ok {
@@ -178,13 +177,13 @@ func proxySSH(conn *websocket.Conn, ip string, port int, log *zap.Logger) {
 		conn.WriteMessage(websocket.TextMessage, []byte("ssh connection failed\r\n")) //nolint:errcheck
 		return
 	}
-	defer client.Close()
+	defer client.Close() //nolint:errcheck
 
 	sshSess, err := client.NewSession()
 	if err != nil {
 		return
 	}
-	defer sshSess.Close()
+	defer sshSess.Close() //nolint:errcheck
 
 	sshSess.RequestPty("xterm-256color", 40, 120, ssh.TerminalModes{}) //nolint:errcheck
 	stdin, _ := sshSess.StdinPipe()
@@ -209,7 +208,7 @@ func proxySSH(conn *websocket.Conn, ip string, port int, log *zap.Logger) {
 		if err != nil {
 			return
 		}
-		io.WriteString(stdin, string(data)) //nolint:errcheck
+		_, _ = stdin.Write(data)
 	}
 }
 

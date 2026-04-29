@@ -10,8 +10,8 @@ import (
 // HybridOrchestrator는 온프렘 KubeVirt를 우선 사용하고 풀이 소진되면 AWS EC2로 폴백한다.
 // 기획서의 "온프렘 우선 + EC2 오버플로우" 라우팅 정책을 구현.
 type HybridOrchestrator struct {
-	kubevirt     Orchestrator
-	ec2          Orchestrator
+	kubevirt       Orchestrator
+	ec2            Orchestrator
 	maxKubeVirtVMs int // pool capacity threshold
 }
 

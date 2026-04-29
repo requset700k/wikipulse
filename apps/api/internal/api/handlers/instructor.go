@@ -19,21 +19,16 @@ func (h *Handler) InstructorListSessions(c *gin.Context) {
 
 	// PTY registry에서 실제 터미널이 활성화된 세션에 has_terminal 플래그 추가
 	h.log.Info("instructor sessions check", zap.Int("count", len(list)))
-	type sessionWithTerminal struct {
-		service interface{}
-		HasTerminal bool `json:"has_terminal"`
-	}
-
 	type enriched struct {
-		ID          string `json:"id"`
-		UserName    string `json:"user_name"`
-		UserEmail   string `json:"user_email"`
-		LabID       string `json:"lab_id"`
-		Status      string `json:"status"`
-		CurrentStep int    `json:"current_step"`
-		StepsDone   int    `json:"steps_done"`
+		ID          string      `json:"id"`
+		UserName    string      `json:"user_name"`
+		UserEmail   string      `json:"user_email"`
+		LabID       string      `json:"lab_id"`
+		Status      string      `json:"status"`
+		CurrentStep int         `json:"current_step"`
+		StepsDone   int         `json:"steps_done"`
 		StartedAt   interface{} `json:"started_at"`
-		HasTerminal bool   `json:"has_terminal"`
+		HasTerminal bool        `json:"has_terminal"`
 	}
 
 	result := make([]enriched, 0, len(list))

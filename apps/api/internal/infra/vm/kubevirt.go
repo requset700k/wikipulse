@@ -22,9 +22,9 @@ type KubeVirtOrchestrator struct {
 
 func NewKubeVirt(apiServer, namespace, token string) *KubeVirtOrchestrator {
 	return &KubeVirtOrchestrator{
-		apiServer: apiServer,
-		namespace: namespace,
-		token:     token,
+		apiServer:  apiServer,
+		namespace:  namespace,
+		token:      token,
 		httpClient: &http.Client{Timeout: 30 * time.Second},
 	}
 }
@@ -70,7 +70,7 @@ func (k *KubeVirtOrchestrator) Create(ctx context.Context, req CreateRequest) (*
 	if err != nil {
 		return nil, fmt.Errorf("create VMI: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("create VMI: HTTP %d", resp.StatusCode)
@@ -93,7 +93,7 @@ func (k *KubeVirtOrchestrator) Status(ctx context.Context, vmID string, _ Provid
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	var vmi struct {
 		Status struct {
@@ -121,7 +121,7 @@ func (k *KubeVirtOrchestrator) Delete(ctx context.Context, vmID string, _ Provid
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 	return nil
 }
 

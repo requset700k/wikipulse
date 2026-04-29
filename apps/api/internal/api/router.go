@@ -17,7 +17,7 @@ func NewRouter(cfg *config.Config, log *zap.Logger, sessions *service.SessionSer
 	gin.SetMode(cfg.Server.Mode)
 
 	r := gin.New()
-	r.Use(gin.Recovery())        // 패닉 발생 시 500 응답 후 서버 유지
+	r.Use(gin.Recovery())         // 패닉 발생 시 500 응답 후 서버 유지
 	r.Use(middleware.Logger(log)) // 모든 요청/응답 구조화 로그
 	r.Use(cors.New(cors.Config{
 		// 로컬 개발 시 Next.js dev server(3000)에서의 요청 허용.
@@ -61,12 +61,12 @@ func NewRouter(cfg *config.Config, log *zap.Logger, sessions *service.SessionSer
 
 		sessions := protected.Group("/sessions")
 		{
-			sessions.POST("", h.CreateSession)            // VM 프로비저닝 시작
-			sessions.GET("/:id", h.GetSession)            // 세션 상태 폴링용
-			sessions.DELETE("/:id", h.DeleteSession)      // 세션 종료 + VM destroy
-			sessions.GET("/:id/ws", h.TerminalWS)         // xterm.js WebSocket 연결점
+			sessions.POST("", h.CreateSession)                  // VM 프로비저닝 시작
+			sessions.GET("/:id", h.GetSession)                  // 세션 상태 폴링용
+			sessions.DELETE("/:id", h.DeleteSession)            // 세션 종료 + VM destroy
+			sessions.GET("/:id/ws", h.TerminalWS)               // xterm.js WebSocket 연결점
 			sessions.POST("/:id/validate", h.TriggerValidation) // 단계 완료 검증 요청
-			sessions.POST("/:id/hint", h.RequestHint)     // AI 힌트 요청 (Rate Limit 적용)
+			sessions.POST("/:id/hint", h.RequestHint)           // AI 힌트 요청 (Rate Limit 적용)
 			sessions.GET("/:id/steps", h.GetSteps)
 			sessions.PUT("/:id/steps/:stepId", h.UpdateStep)
 		}
@@ -76,7 +76,7 @@ func NewRouter(cfg *config.Config, log *zap.Logger, sessions *service.SessionSer
 		instructor.Use(middleware.RequireRole("instructor"))
 		{
 			instructor.GET("/sessions", h.InstructorListSessions)
-			instructor.GET("/sessions/:id/ws", h.InstructorTerminalWS) // 수강생 터미널 관전 (읽기 전용)
+			instructor.GET("/sessions/:id/ws", h.InstructorTerminalWS)         // 수강생 터미널 관전 (읽기 전용)
 			instructor.POST("/sessions/:id/inject", h.InstructorInjectCommand) // 수강생 터미널에 명령 주입
 		}
 	}

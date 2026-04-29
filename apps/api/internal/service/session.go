@@ -50,10 +50,12 @@ func (s *SessionService) Create(ctx context.Context, p CreateParams) (*session.S
 		LIMIT 1
 	`, p.UserID, p.LabID).Scan(&existingID)
 	if err == nil && existingID != "" {
-		s.db.Exec(ctx, `
+		if _, execErr := s.db.Exec(ctx, `
 			UPDATE sessions SET started_at = NOW(), expires_at = NOW() + INTERVAL '3 hours'
 			WHERE id = $1
-		`, existingID) //nolint:errcheck
+		`, existingID); execErr != nil {
+			s.log.Warn("session renew", zap.Error(execErr))
+		}
 		return s.Get(ctx, existingID, p.UserID)
 	}
 
@@ -73,7 +75,7 @@ func (s *SessionService) Create(ctx context.Context, p CreateParams) (*session.S
 		s.log.Warn("init steps failed", zap.Error(err))
 	}
 
-	go s.provisionAsync(id, p)
+	go s.provisionAsync(id, p) //nolint:gosec
 
 	return &session.Session{
 		ID:          id,
@@ -125,7 +127,7 @@ func (s *SessionService) Delete(ctx context.Context, id, userID string) error {
 		return fmt.Errorf("find session: %w", err)
 	}
 	if vmID != "" {
-		go s.vm.Delete(context.Background(), vmID, vm.Provider(providerStr)) //nolint:errcheck
+		go s.vm.Delete(context.Background(), vmID, vm.Provider(providerStr)) //nolint:errcheck,gosec
 	}
 	_, err = s.db.Exec(ctx,
 		"UPDATE sessions SET status='completed', completed_at=NOW() WHERE id=$1", id)
@@ -192,16 +194,20 @@ func (s *SessionService) SimulateValidation(sessionID string, stepID int) {
 	go func() {
 		time.Sleep(2 * time.Second)
 		ctx := context.Background()
-		s.db.Exec(ctx, `
+		if _, err := s.db.Exec(ctx, `
 			UPDATE step_progress
 			SET status='passed', attempts = attempts + 1, updated_at = NOW()
 			WHERE session_id=$1 AND step_id=$2
-		`, sessionID, stepID) //nolint:errcheck
+		`, sessionID, stepID); err != nil {
+			s.log.Warn("simulate validation step", zap.Error(err))
+		}
 
 		// Advance current_step
-		s.db.Exec(ctx,
+		if _, err := s.db.Exec(ctx,
 			"UPDATE sessions SET current_step = current_step + 1 WHERE id=$1",
-			sessionID) //nolint:errcheck
+			sessionID); err != nil {
+			s.log.Warn("simulate validation step advance", zap.Error(err))
+		}
 	}()
 }
 
@@ -272,9 +278,11 @@ func (s *SessionService) provisionAsync(sessionID string, p CreateParams) {
 		s.setStatus(ctx, sessionID, "failed")
 		return
 	}
-	s.db.Exec(ctx, `
+	if _, err := s.db.Exec(ctx, `
 		UPDATE sessions SET status='ready', vm_id=$2, vm_ip=$3, vm_port=$4, vm_provider=$5 WHERE id=$1
-	`, sessionID, vmInfo.ID, vmInfo.IP, vmInfo.Port, string(vmInfo.Provider)) //nolint:errcheck
+	`, sessionID, vmInfo.ID, vmInfo.IP, vmInfo.Port, string(vmInfo.Provider)); err != nil {
+		s.log.Error("provision update session", zap.String("session", sessionID), zap.Error(err))
+	}
 }
 
 func (s *SessionService) setStatus(ctx context.Context, id, status string) {

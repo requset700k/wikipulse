@@ -2,7 +2,8 @@
 // BFF가 없거나 장애 시 mockHint로 폴백.
 //
 // Rate Limit: Redis INCR+Expire 패턴으로 사용자×세션 단위 분당 6회 제한.
-//   Redis 장애 시에는 제한 없이 허용 (서비스 가용성 우선).
+//
+//	Redis 장애 시에는 제한 없이 허용 (서비스 가용성 우선).
 package service
 
 import (
@@ -78,7 +79,7 @@ func (s *HintService) checkRateLimit(ctx context.Context, userID, sessionID stri
 	key := fmt.Sprintf("hint:%s:%s", userID, sessionID)
 	count, err := s.rdb.Incr(ctx, key).Result()
 	if err != nil {
-		return hintLimitPerMinute, nil // redis 장애 시 허용
+		return hintLimitPerMinute, nil //nolint:nilerr // redis 장애 시 허용
 	}
 	if count == 1 {
 		s.rdb.Expire(ctx, key, time.Minute) //nolint:errcheck
@@ -108,7 +109,7 @@ func (s *HintService) callBFF(ctx context.Context, p HintParams) (*HintResult, e
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	var result HintResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
