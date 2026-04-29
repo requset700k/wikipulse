@@ -1,0 +1,19 @@
+---
+# security-logs: Falco 런타임 경보, K8s audit log, Keycloak 인증 이벤트.
+# 소비자: 보안팀 SIEM 파이프라인(윤승호), 컴플라이언스 감사 추적.
+# 파티션 키: source 유형(falco / k8s-audit / auth) → 소스당 파티션 2개.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: security-logs
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: cledyu-kafka
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    # 30일 보존 — 감사·컴플라이언스 요구사항으로 일반 이벤트보다 길게 유지한다.
+    retention.ms: "2592000000"
+    min.insync.replicas: "2"
+    cleanup.policy: delete

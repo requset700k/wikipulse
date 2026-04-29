@@ -1,0 +1,19 @@
+---
+# validation-requests: Session API가 검증 요청을 발행하면 Validation Engine이 구독해 처리한다.
+# 소비자: Validation Engine(김찬영) — VM에 SSH/kubectl exec 후 validation-results로 결과 발행.
+# 파티션 키: session_id 해시 → 파티션 내 세션별 순서 보장.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: validation-requests
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: cledyu-kafka
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    # 1시간 보존 — Validation Engine이 즉시 소비하므로 짧게 유지한다.
+    retention.ms: "3600000"
+    min.insync.replicas: "2"
+    cleanup.policy: delete

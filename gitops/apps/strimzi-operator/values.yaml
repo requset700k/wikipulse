@@ -1,0 +1,30 @@
+# Strimzi Kafka Operator — Helm values
+
+watchNamespaces:
+  - kafka
+
+# Operator Pod — strimzi-system은 PSA baseline이지만 가능한 restricted 수준으로 강화한다.
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false  # operator가 임시 상태 파일을 기록하므로 false 유지
+  seccompProfile:
+    type: RuntimeDefault
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi
+
+# 0.43.0에서 KRaft(UseKRaft)와 KafkaNodePools feature gate가 GA로 승격됐으므로 별도 설정 불필요.

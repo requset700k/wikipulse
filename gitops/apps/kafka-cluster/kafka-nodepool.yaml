@@ -1,0 +1,55 @@
+---
+# combined 모드(controller+broker 겸임) — 노드 수가 6개 미만인 클러스터에 적합하다.
+# 3개 노드 모두 Raft 리더 선출과 클라이언트 요청 처리에 참여한다.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: kafka
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: cledyu-kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: persistent-claim
+    size: 30Gi
+    class: longhorn
+    deleteClaim: false
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  jvmOptions:
+    -Xms: 1024m
+    -Xmx: 2048m
+  # kafka 네임스페이스 PSA restricted 적용을 위해 securityContext를 명시한다.
+  template:
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  strimzi.io/cluster: cledyu-kafka
+                  app.kubernetes.io/name: kafka
+              topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    kafkaContainer:
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
