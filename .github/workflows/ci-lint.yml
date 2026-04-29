@@ -16,7 +16,7 @@ on:
       - '**/*.js'
       - '**/*.jsx'
       - '**/package.json'
-      - '**/package-lock.json'
+      - '**/pnpm-lock.yaml'
       - '.github/workflows/ci-lint.yml'
   push:
     branches: [main]
@@ -29,7 +29,7 @@ on:
       - '**/*.js'
       - '**/*.jsx'
       - '**/package.json'
-      - '**/package-lock.json'
+      - '**/pnpm-lock.yaml'
       - '.github/workflows/ci-lint.yml'
   workflow_dispatch:
 
@@ -69,27 +69,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect package.json
+      - name: Detect pnpm-lock.yaml
         id: pkg
         run: |
           set -euo pipefail
-          if git ls-files '**/package.json' | grep -q .; then
+          if git ls-files '**/pnpm-lock.yaml' | grep -q .; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
-            echo "No package.json — eslint steps will be skipped."
+            echo "No pnpm-lock.yaml — eslint steps will be skipped."
           fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.pkg.outputs.found == 'true'
+        with:
+          version: 10
 
       - uses: actions/setup-node@v4
         if: steps.pkg.outputs.found == 'true'
         with:
           node-version: '20'
-          cache: npm
+          cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
       - name: Install deps
         if: steps.pkg.outputs.found == 'true'
-        run: npm ci --no-audit --no-fund
+        run: |
+          for dir in $(git ls-files '**/pnpm-lock.yaml' | sed 's|/pnpm-lock.yaml||'); do
+            pnpm install --frozen-lockfile --dir "$dir"
+          done
 
       - name: Run ESLint
         if: steps.pkg.outputs.found == 'true'
-        run: npm run lint --if-present
+        run: |
+          for dir in $(git ls-files '**/pnpm-lock.yaml' | sed 's|/pnpm-lock.yaml||'); do
+            pnpm --dir "$dir" run lint --if-present
+          done
