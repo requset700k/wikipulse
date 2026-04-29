@@ -1,0 +1,9 @@
+# Next.js
+.next/
+out/
+
+# Dependencies
+node_modules/
+
+# Build cache
+tsconfig.tsbuildinfo
