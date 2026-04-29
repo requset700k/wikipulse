@@ -1,3 +1,4 @@
+/* 전역 스타일 — Tailwind base/components/utilities + 다크 테마 기본값 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

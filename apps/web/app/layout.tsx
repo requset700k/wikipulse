@@ -1,3 +1,4 @@
+// 앱 루트 레이아웃 — 모든 페이지에 공통 적용. Inter 폰트, 전역 CSS 설정.
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
