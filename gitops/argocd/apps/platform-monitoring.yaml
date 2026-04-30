@@ -16,10 +16,10 @@ spec:
         valueFiles:
           - $values/gitops/apps/kube-prometheus-stack/values.yaml
     - repoURL: https://github.com/requset700k/Cledyu.git
-      targetRevision: feat/monitoring-foundation
+      targetRevision: main
       ref: values
     - repoURL: https://github.com/requset700k/Cledyu.git
-      targetRevision: feat/monitoring-foundation
+      targetRevision: main
       path: infra/kubernetes/monitoring
   destination:
     server: https://kubernetes.default.svc
