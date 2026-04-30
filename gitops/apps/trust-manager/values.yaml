@@ -1,0 +1,46 @@
+---
+# trust-manager — cert-manager 의 sister project.
+# Bundle CR 을 통해 CA public cert 만 N 개 namespace 에 ConfigMap/Secret 으로 분배.
+# Kafka ca-secret-sync 가 cross-namespace Secret 직접 read 하던 패턴 대체:
+# root CA private key 를 kafka SA 에 노출 X.
+
+replicaCount: 1
+
+# trust-manager 자체는 cert-manager API (Issuer/Certificate) 사용 안 함.
+# 다만 cert-manager CRD 가 cluster 에 있어야 trust-manager 의 Bundle controller 가 동작.
+# 우리 cluster 는 cert-manager v1.20.2 운영 중 — 호환 ✅
+
+# Bundle 의 source 로 cert-manager namespace 의 secret 을 read 해야 한다.
+# trust-manager 가 watch 할 secret namespace 명시 (default 는 cert-manager).
+secretTargets:
+  enabled: false   # trust-manager 가 ConfigMap 만 분배 (Secret 분배 X — public cert only)
+  authorizedSecretsAll: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+podDisruptionBudget:
+  enabled: false   # replicaCount=1 이라 PDB 의미 없음
+
+# PSS restricted 호환 (chart default 가 이미 잘 설정돼있지만 명시)
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Approver 는 cert-manager 가 발급한 cert 의 CSR 에 자동 approve.
+# 우리 use case (Bundle CR 만 사용) 에선 미필요 — 비활성으로 리소스 절약.
+approver:
+  enabled: false
