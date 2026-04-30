@@ -13,7 +13,7 @@ spec:
   partitions: 6
   replicas: 3
   config:
-    # 30일 보존 — 감사·컴플라이언스 요구사항으로 일반 이벤트보다 길게 유지한다.
-    retention.ms: "2592000000"
+    # 90일 보존 — S3 sink 미배포 시 30일 후 유실 방지. S3 sink 도입 후 단축 가능.
+    retention.ms: "7776000000"
     min.insync.replicas: "2"
     cleanup.policy: delete
