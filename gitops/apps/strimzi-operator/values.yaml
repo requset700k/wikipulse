@@ -4,18 +4,19 @@ watchNamespaces:
   - kafka
 
 # Operator Pod — strimzi-system은 PSA baseline이지만 가능한 restricted 수준으로 강화한다.
-securityContext:
+podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1001
   seccompProfile:
     type: RuntimeDefault
 
-containerSecurityContext:
-  allowPrivilegeEscalation: false
+# securityContext (container-level)
+securityContext:
+  allowPrivilegeEscalation: false # 실행 중에 권한 상승 금지
   capabilities:
     drop:
       - ALL
-  readOnlyRootFilesystem: false  # operator가 임시 상태 파일을 기록하므로 false 유지
+  readOnlyRootFilesystem: false  # Operator가 임시 상태 파일을 기록하므로 false 유지
   seccompProfile:
     type: RuntimeDefault
 
