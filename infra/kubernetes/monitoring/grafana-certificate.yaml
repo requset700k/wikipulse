@@ -4,7 +4,7 @@ metadata:
   name: grafana-tls
   namespace: monitoring
 spec:
-  secretName: grafana-tls
+  secretName: cledyu-ca
   issuerRef:
     name: cledyu-ca-cluster-issuer
     kind: ClusterIssuer
