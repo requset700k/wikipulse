@@ -95,7 +95,7 @@ grafana:
       emptyDir: {}
 
   ingress: # Grafana Ingress 설정
-    enabled: true
+    enabled: false
     ingressClassName: traefik
     annotations:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
