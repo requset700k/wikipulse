@@ -26,6 +26,26 @@ repos:
       - id: check-json
       - id: check-toml
 
+  # 1.5) 빈/공백 파일명 차단 — #19에서 공백 파일명이 루트에 커밋된 사고 재발 방지.
+  #       스테이징된 파일명이 공백만으로 이루어져 있으면 거부.
+  - repo: local
+    hooks:
+      - id: check-filename-not-blank
+        name: check filename is not blank
+        entry: >-
+          bash -c '
+            blank=$({ git diff --cached --name-only --diff-filter=A; git diff --cached --name-only --diff-filter=M; } | grep -E "^[[:space:]]*$" || true);
+            if [ -n "$blank" ]; then
+              echo "ERROR: blank/whitespace-only filename detected in staging area:";
+              echo "$blank";
+              echo "Run: git update-index --force-remove \" \"";
+              exit 1;
+            fi'
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
   # 2) 시크릿 스캔
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.21.2
