@@ -98,6 +98,8 @@ grafana:
   # client_secret 은 env var (GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET) 로 덮어쓴다.
   # Secret grafana-oidc(client-secret 키) 를 monitoring namespace 에 미리 생성해야 한다.
   grafana.ini:
+    server:
+      root_url: "https://grafana.cledyu.local"
     auth:
       disable_login_form: "false"
     auth.generic_oauth:
