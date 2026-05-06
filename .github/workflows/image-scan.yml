@@ -125,11 +125,12 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
           vuln-type: 'os,library'
           trivyignores: ${{ steps.trivyignore.outputs.path }}
 
-      - name: Upload SARIF to code scanning
+      - name: Trivy scan (sarif upload)
+        if: always()
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
