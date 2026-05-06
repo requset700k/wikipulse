@@ -66,6 +66,9 @@ alertmanager:
 
 # ── Grafana ───────────────────────────────────────────────────
 grafana:
+  deploymentStrategy:
+    type: Recreate
+
   initChownData:
     enabled: false
   persistence:
