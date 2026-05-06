@@ -50,6 +50,8 @@ server:
       setNodeId: true
       config: |
         ui = true
+        # PSA restricted drops CAP_IPC_LOCK, so Vault cannot mlock memory in this namespace.
+        # Cluster nodes are expected to keep swap disabled; revisit if swap is enabled later.
         disable_mlock = true
 
         listener "tcp" {
@@ -60,6 +62,8 @@ server:
           tls_key_file = "/vault/tls/tls.key"
           tls_client_ca_file = "/vault/tls/ca.crt"
 
+          # Temporary trade-off until authenticated ServiceMonitor scraping is enabled.
+          # Keep this listener internal-only via ClusterIP/Traefik routing; split metrics listener if exposure changes.
           telemetry {
             unauthenticated_metrics_access = true
           }

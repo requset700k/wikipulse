@@ -1,53 +1,53 @@
 variable "keycloak_url" {
-  description = "Base URL for the Keycloak deployment."
+  description = "Keycloak 배포의 기본 URL."
   type        = string
   default     = "https://keycloak.cledyu.local"
 }
 
 variable "keycloak_admin_realm" {
-  description = "Realm used to authenticate the Terraform provider."
+  description = "Terraform provider 인증에 사용하는 realm."
   type        = string
   default     = "master"
 }
 
 variable "keycloak_admin_client_id" {
-  description = "Admin client ID used by the Terraform provider."
+  description = "Terraform provider가 사용하는 admin client ID."
   type        = string
   default     = "admin-cli"
 }
 
 variable "keycloak_admin_username" {
-  description = "Keycloak admin username for Terraform."
+  description = "Terraform 실행에 사용하는 Keycloak admin 사용자명."
   type        = string
   sensitive   = true
 }
 
 variable "keycloak_admin_password" {
-  description = "Keycloak admin password for Terraform."
+  description = "Terraform 실행에 사용하는 Keycloak admin 비밀번호."
   type        = string
   sensitive   = true
 }
 
 variable "keycloak_tls_insecure_skip_verify" {
-  description = "Skip TLS verification for the Keycloak provider. Keep false after Cledyu Root CA is trusted."
+  description = "Keycloak provider의 TLS 검증 생략 여부. Cledyu Root CA 신뢰 등록 후에는 false 유지."
   type        = bool
   default     = false
 }
 
 variable "realm_name" {
-  description = "Business realm name for Cledyu."
+  description = "Cledyu 업무용 realm 이름."
   type        = string
   default     = "cledyu"
 }
 
 variable "realm_display_name" {
-  description = "Human-readable display name for the Cledyu realm."
+  description = "Cledyu realm의 화면 표시 이름."
   type        = string
   default     = "Cledyu"
 }
 
 variable "oidc_clients" {
-  description = "OIDC clients managed in the Cledyu realm."
+  description = "Cledyu realm에서 관리하는 OIDC client 목록."
   type = map(object({
     name                            = string
     access_type                     = string
@@ -66,14 +66,14 @@ variable "oidc_clients" {
 }
 
 variable "oidc_client_secrets" {
-  description = "Client secrets for confidential OIDC clients. Store real values in a secure tfvars source."
+  description = "confidential OIDC client의 secret 값. 실제 값은 보안 tfvars 저장소에만 보관."
   type        = map(string)
   default     = {}
   sensitive   = true
 }
 
 variable "team_members" {
-  description = "Team member users to create and map to groups."
+  description = "생성할 팀원 사용자와 그룹 매핑 정보."
   type = map(object({
     username           = string
     email              = string
@@ -87,13 +87,13 @@ variable "team_members" {
 }
 
 variable "team_member_initial_passwords" {
-  description = "Temporary bootstrap passwords for team members. Store real values in a secure tfvars source."
+  description = "팀원 초기 임시 비밀번호. 실제 값은 보안 tfvars 저장소에만 보관."
   type        = map(string)
   sensitive   = true
 }
 
 variable "master_super_admins" {
-  description = "Master realm super-admin users (ADR-0001 §13). lifecycle.ignore_changes 로 비번 reset 강제 방지."
+  description = "master realm super-admin 사용자 목록(ADR-0001 13장). lifecycle.ignore_changes로 비밀번호 강제 재설정 방지."
   type = map(object({
     username   = string
     email      = string
@@ -104,7 +104,7 @@ variable "master_super_admins" {
 }
 
 variable "master_admin_initial_passwords" {
-  description = "Master realm super-admin 의 초기 임시 비번. 1Password 보관 후 첫 로그인 시 변경 강제."
+  description = "master realm super-admin 초기 임시 비밀번호. 1Password 보관 후 첫 로그인 시 변경 강제."
   type        = map(string)
   default     = {}
   sensitive   = true
