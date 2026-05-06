@@ -1,0 +1,13 @@
+installCRDs: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+securityContext:
+  runAsNonRoot: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
