@@ -68,6 +68,7 @@ alertmanager:
 grafana:
   deploymentStrategy:
     type: Recreate
+    rollingUpdate: null
 
   initChownData:
     enabled: false
