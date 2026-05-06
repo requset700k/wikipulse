@@ -141,7 +141,7 @@ grafana:
       scopes: "openid profile email"
       auth_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/auth
       token_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/token
-      tls_ca_cert: /etc/ssl/cledyu/ca.crt
+      tls_client_ca: /etc/ssl/cledyu/ca.crt
       api_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/userinfo
       sign_out_redirect_url: "https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/logout?client_id=grafana&post_logout_redirect_uri=https://grafana.cledyu.local/"
       role_attribute_path: "contains(groups[*], 'team-observability') && 'Admin' || contains(groups[*], 'team-platform') && 'Admin' || 'Viewer'"
