@@ -55,6 +55,10 @@ on:
         description: "Trivy fail severity threshold"
         type: string
         default: CRITICAL,HIGH
+      trivyignores:
+        description: "Path to .trivyignore file (optional)"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -122,6 +126,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           format: table
+          trivyignores: ${{ inputs.trivyignores }}
         env:
           TRIVY_USERNAME: ${{ github.actor }}
           TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}

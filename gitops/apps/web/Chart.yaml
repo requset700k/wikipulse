@@ -1,0 +1,6 @@
+apiVersion: v2
+name: web
+description: Cledyu Next.js 웹 프론트엔드
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
