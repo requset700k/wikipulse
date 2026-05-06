@@ -1,0 +1,13 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: strimzi-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    # Strimzi operator는 PSA restricted에서 실행 불가(ClusterRole 관리 등 상승된 권한 필요).
+    # 실제 실행(enforce)은 일을 해야 하니 baseline으로 조금 열어주었지만, 감시(audit)와 경고(warn)는 가장 높은 수준인 restricted로 설정
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

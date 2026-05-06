@@ -1,0 +1,47 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-trust-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    # Helm chart — trust-manager (cert-manager 의 sister project, jetstack)
+    - repoURL: https://charts.jetstack.io
+      chart: trust-manager
+      targetRevision: v0.22.0
+      helm:
+        releaseName: trust-manager
+        valueFiles:
+          - $values/gitops/apps/trust-manager/values.yaml
+    # values 와 raw manifest 가 같은 git repo 에 있어야 ArgoCD multi-source 가
+    # value 파일을 chart 에 inject 가능 (ref: $values).
+    - repoURL: https://github.com/requset700k/Cledyu.git
+      targetRevision: main
+      ref: values
+    # Bundle CR + namespace — directory mode (subdir-only)
+    - repoURL: https://github.com/requset700k/Cledyu.git
+      targetRevision: main
+      path: gitops/apps/trust-manager
+      directory:
+        include: "{namespace.yaml,cledyu-root-ca-bundle.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: trust-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true   # Bundle CRD 는 chart sync 후 등록되므로 첫 sync 시 dry-run skip
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

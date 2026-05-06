@@ -1,0 +1,19 @@
+---
+# validation-results: Validation Engine이 lab VM에 SSH/kubectl exec 검증 후 발행하는 pass/fail 결과.
+# 소비자: Session API — 학습자 진행 상태 업데이트.
+# 파티션 키: session_id 해시 → 파티션 내 세션별 순서 보장.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: validation-results
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: cledyu-kafka
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    # 7일 보존 — 이벤트 드리븐 방식으로 Session API가 즉시 소비한다.
+    retention.ms: "604800000"
+    min.insync.replicas: "2"
+    cleanup.policy: delete

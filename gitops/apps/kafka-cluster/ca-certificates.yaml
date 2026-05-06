@@ -1,0 +1,64 @@
+---
+# Kafka 클러스터 CA — cledyu-ca로 서명한 중간 CA.
+# Strimzi가 브로커 간 TLS 인증서를 이 CA로 발급한다.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kafka-cluster-ca
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  isCA: true
+  commonName: "Cledyu Kafka Cluster CA"
+  secretName: kafka-cluster-ca-cm
+  duration: "43800h"
+  renewBefore: "720h"
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    rotationPolicy: Always
+  subject:
+    organizations:
+      - Cledyu
+    organizationalUnits:
+      - Kafka
+  usages:
+    - cert sign
+    - crl sign
+  issuerRef:
+    name: cledyu-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# Kafka 클라이언트 CA — cledyu-ca로 서명한 중간 CA.
+# Strimzi가 클라이언트(Validation Engine, 분석 파이프라인) mTLS 인증서를 이 CA로 발급한다.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kafka-clients-ca
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  isCA: true
+  commonName: "Cledyu Kafka Clients CA"
+  secretName: kafka-clients-ca-cm
+  duration: "43800h"
+  renewBefore: "720h"
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    rotationPolicy: Always
+  subject:
+    organizations:
+      - Cledyu
+    organizationalUnits:
+      - Kafka
+  usages:
+    - cert sign
+    - crl sign
+  issuerRef:
+    name: cledyu-ca
+    kind: ClusterIssuer
+    group: cert-manager.io

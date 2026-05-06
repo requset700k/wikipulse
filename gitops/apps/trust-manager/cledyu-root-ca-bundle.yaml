@@ -1,0 +1,36 @@
+---
+# Cledyu Root CA public cert 를 모든 namespace 에 ConfigMap 으로 분배.
+#
+# Source: cert-manager namespace 의 cledyu-root-ca Secret (cert-manager 가 관리).
+#         tls.crt 만 read 함 — trust-manager 가 SecretSpec/ConfigMapSpec 자체에서
+#         private key 노출을 차단하는 구조라 root CA private key 는 절대 분배 X.
+#
+# Target: 모든 namespace 의 ConfigMap "cledyu-root-ca-bundle.crt"
+#         (key=tls.crt 또는 ca.crt 로 mount 가능)
+#
+# 사용처:
+# - kafka 의 ca-secret-sync Job — root CA public cert 를 ConfigMap 에서 read
+#   (이전 패턴: cross-namespace Secret read with kafka-ca-sync-root-reader ClusterRole 폐기)
+# - 향후 ArgoCD / Vault / Web/API/Tutor 등 다른 서비스도 동일 Bundle 참조 가능
+#
+# trust-manager 자동 갱신: cledyu-root-ca rotate 시 Bundle 도 자동 sync.
+
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: cledyu-root-ca-bundle
+spec:
+  sources:
+    - secret:
+        name: cledyu-root-ca
+        key: tls.crt
+  target:
+    configMap:
+      key: ca.crt
+    namespaceSelector:
+      matchLabels:
+        # cledyu-root-ca-bundle 을 받기로 명시한 namespace 만 분배.
+        # 모든 namespace 에 무차별 배포하면 system namespace 에도 들어가서 노이즈.
+        # 사용 측 namespace 에 label 추가:
+        #   kubectl label ns kafka cledyu.io/trust-bundle=root-ca
+        cledyu.io/trust-bundle: root-ca
