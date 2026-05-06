@@ -52,6 +52,7 @@
       - any-glob-to-any-file:
           - services/**
           - web/**
+          - apps/web/**
           - apps/session-api/**
           - apps/validation-engine/**
 
