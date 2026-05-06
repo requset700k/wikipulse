@@ -91,6 +91,24 @@
   until: keycloak_foundation_tls_secret_type.stdout == "kubernetes.io/tls"
   become_user: ubuntu
 
+- name: Render keycloak workload ServiceAccount manifest
+  ansible.builtin.template:
+    src: serviceaccount.yaml.j2
+    dest: "{{ keycloak_foundation_service_account_manifest_path }}"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0600"
+
+- name: Apply keycloak workload ServiceAccount manifest
+  ansible.builtin.command: >-
+    kubectl --kubeconfig={{ keycloak_foundation_kubeconfig }}
+    apply -f {{ keycloak_foundation_service_account_manifest_path }}
+  register: keycloak_foundation_service_account_apply
+  changed_when: >-
+    "created" in keycloak_foundation_service_account_apply.stdout
+    or "configured" in keycloak_foundation_service_account_apply.stdout
+  become_user: ubuntu
+
 - name: Render keycloak foundation manifest
   ansible.builtin.template:
     src: keycloak.yaml.j2

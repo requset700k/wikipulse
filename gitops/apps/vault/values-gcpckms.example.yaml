@@ -35,6 +35,8 @@ server:
     raft:
       config: |
         ui = true
+        # Keep aligned with base values.yaml: restricted PSA drops CAP_IPC_LOCK, so mlock is disabled.
+        # This assumes Kubernetes nodes run with swap disabled.
         disable_mlock = true
 
         seal "gcpckms" {
@@ -51,6 +53,12 @@ server:
           tls_cert_file = "/vault/tls/tls.crt"
           tls_key_file = "/vault/tls/tls.key"
           tls_client_ca_file = "/vault/tls/ca.crt"
+
+          # Keep aligned with base values.yaml so KMS overlay does not drop metrics behavior.
+          # Revisit when ServiceMonitor scraping uses authenticated access or a dedicated metrics listener.
+          telemetry {
+            unauthenticated_metrics_access = true
+          }
         }
 
         storage "raft" {

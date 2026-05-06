@@ -6,6 +6,10 @@ metadata:
   namespace: "{{ keycloak_foundation_namespace }}"
 spec:
   instances: {{ keycloak_foundation_instances }}
+  unsupported:
+    podTemplate:
+      spec:
+        serviceAccountName: "{{ keycloak_foundation_service_account_name }}"
   db:
     vendor: postgres
     host: "{{ keycloak_foundation_db_service_name }}"
