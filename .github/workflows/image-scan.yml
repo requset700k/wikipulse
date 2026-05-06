@@ -105,7 +105,18 @@ jobs:
             echo "path=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Trivy scan
+      - name: Trivy scan (table - for log visibility)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.ctx.outputs.tag }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: '0'
+          vuln-type: 'os,library'
+          trivyignores: ${{ steps.trivyignore.outputs.path }}
+
+      - name: Trivy scan (sarif - CI gate)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ctx.outputs.tag }}
