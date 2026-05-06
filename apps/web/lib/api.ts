@@ -95,8 +95,4 @@ export const api = {
     me: () => request<User>('/api/v1/me'),
     logout: () => request<void>('/api/v1/auth/logout', { method: 'POST' }),
   },
-
-  instructor: {
-    sessions: () => request<Paginated<Session>>('/api/v1/instructor/sessions'),
-  },
 };
