@@ -91,14 +91,33 @@ grafana:
     capabilities:
       drop: ["ALL"]
 
+  initContainers:
+    - name: inject-ca
+      image: docker.io/alpine:3.20
+      command: ["sh", "-c", "cp /etc/ssl/certs/ca-certificates.crt /ssl/ca-certificates.crt && cat /ca/cledyu-ca.crt >> /ssl/ca-certificates.crt"]
+      volumeMounts:
+        - name: ssl-certs
+          mountPath: /ssl
+        - name: cledyu-ca
+          mountPath: /ca
+          readOnly: true
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+
   extraVolumeMounts:
     - name: tmp
       mountPath: /tmp
+    - name: ssl-certs
+      mountPath: /etc/ssl/certs/ca-certificates.crt
+      subPath: ca-certificates.crt
     - name: cledyu-ca
       mountPath: /etc/ssl/cledyu
       readOnly: true
   extraVolumes:
     - name: tmp
+      emptyDir: {}
+    - name: ssl-certs
       emptyDir: {}
     - name: cledyu-ca
       configMap:
