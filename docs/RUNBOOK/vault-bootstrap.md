@@ -182,7 +182,7 @@ Policies:
 Kubernetes auth roles:
 - cledyu-argocd           argocd/argocd-server
 - cledyu-grafana          monitoring/grafana
-- cledyu-keycloak         keycloak/keycloak-operator, keycloak/default
+- cledyu-keycloak         keycloak/cledyu-keycloak
 - cledyu-services         web/api/tutor service accounts
 
 Migrated paths:

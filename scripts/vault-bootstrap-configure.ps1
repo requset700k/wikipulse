@@ -129,7 +129,7 @@ Write-VaultPolicy -Name "cledyu-service-oidc" -PolicyPath (Join-Path $policyDir 
 Write-Host "Create Kubernetes auth roles..."
 Invoke-VaultCommand -Command "vault write auth/kubernetes/role/cledyu-argocd bound_service_account_names=argocd-server bound_service_account_namespaces=argocd policies=cledyu-argocd ttl=1h >/dev/null"
 Invoke-VaultCommand -Command "vault write auth/kubernetes/role/cledyu-grafana bound_service_account_names=grafana bound_service_account_namespaces=monitoring policies=cledyu-grafana ttl=1h >/dev/null"
-Invoke-VaultCommand -Command "vault write auth/kubernetes/role/cledyu-keycloak bound_service_account_names=keycloak-operator bound_service_account_namespaces=keycloak policies=cledyu-keycloak-admin,cledyu-keycloak-db ttl=1h >/dev/null"
+Invoke-VaultCommand -Command "vault write auth/kubernetes/role/cledyu-keycloak bound_service_account_names=cledyu-keycloak bound_service_account_namespaces=keycloak policies=cledyu-keycloak-admin,cledyu-keycloak-db ttl=1h >/dev/null"
 Invoke-VaultCommand -Command "vault write auth/kubernetes/role/cledyu-services bound_service_account_names=web,api,tutor bound_service_account_namespaces=web,api,tutor policies=cledyu-service-oidc ttl=1h >/dev/null"
 
 Write-Host "Migrate available bootstrap secrets to Vault..."
