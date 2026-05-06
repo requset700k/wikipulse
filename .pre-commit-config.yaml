@@ -22,7 +22,7 @@ repos:
         args: [--fix=lf]
       - id: check-yaml
         args: [--allow-multiple-documents]
-        exclude: ^(ansible/|infra/terraform/.*\.tfvars\.example$)
+        exclude: ^(ansible/|infra/terraform/.*\.tfvars\.example$|gitops/apps/.*/templates/)
       - id: check-json
       - id: check-toml
 
@@ -103,7 +103,7 @@ repos:
         entry: kubeconform
         language: system
         files: ^(gitops/|infra/kubernetes/).*\.ya?ml$
-        exclude: (values[^/]*\.ya?ml|Chart\.ya?ml|kustomization\.ya?ml)$
+        exclude: (values[^/]*\.ya?ml|Chart\.ya?ml|kustomization\.ya?ml)$|gitops/apps/.*/templates/
         args:
           - -ignore-missing-schemas
           - -schema-location

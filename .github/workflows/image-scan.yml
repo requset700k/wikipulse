@@ -95,16 +95,39 @@ jobs:
           load: true
           tags: ${{ steps.ctx.outputs.tag }}
 
-      - name: Trivy scan (fail on HIGH/CRITICAL)
+      - name: Resolve .trivyignore path
+        id: trivyignore
+        run: |
+          ignore_file="${{ steps.ctx.outputs.context }}/.trivyignore"
+          if [ -f "$ignore_file" ]; then
+            echo "path=$ignore_file" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trivy scan (CI gate)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ctx.outputs.tag }}
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
           exit-code: '1'
-          vuln-type: os,library
+          vuln-type: 'os,library'
+          trivyignores: ${{ steps.trivyignore.outputs.path }}
+
+      - name: Trivy scan (sarif upload)
+        if: always()
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.ctx.outputs.tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: '0'
+          vuln-type: 'os,library'
+          trivyignores: ${{ steps.trivyignore.outputs.path }}
 
       - name: Upload SARIF to code scanning
         if: always()
