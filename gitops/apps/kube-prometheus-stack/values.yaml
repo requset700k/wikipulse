@@ -67,8 +67,7 @@ alertmanager:
 # ── Grafana ───────────────────────────────────────────────────
 grafana:
   deploymentStrategy:
-    type: Recreate
-    rollingUpdate: null
+    type: RollingUpdate
 
   initChownData:
     enabled: false
