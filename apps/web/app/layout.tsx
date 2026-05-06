@@ -8,7 +8,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'KT Tech-Up Labs',
+  title: 'Cledyu',
   description: '클라우드 엔지니어링 인터랙티브 실습 플랫폼',
 };
 

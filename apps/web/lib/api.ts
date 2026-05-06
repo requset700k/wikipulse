@@ -2,7 +2,7 @@
 // 모든 HTTP 요청은 Next.js rewrite를 통해 /api/* → BACKEND_URL/api/*로 프록시됨.
 // WebSocket은 rewrite 대상이 아니므로 Terminal 컴포넌트에서 NEXT_PUBLIC_WS_URL로 직접 연결.
 
-import type { Lab, Session, StepProgress, User, Badge, LeaderboardEntry } from './types';
+import type { Lab, Session, StepProgress, User } from './types';
 
 interface Paginated<T> {
   items: T[];
@@ -15,22 +15,57 @@ const DEV_HEADERS: Record<string, string> =
 
 /** 모든 API 요청의 공통 래퍼. 에러 응답은 백엔드의 { error: string } 포맷으로 throw. */
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    ...options,
-    credentials: 'include', // Keycloak 쿠키(access_token) 자동 포함
-    headers: {
-      'Content-Type': 'application/json',
-      ...DEV_HEADERS,
-      ...options?.headers,
-    },
-  });
+  const headers: Record<string, string> = {
+    ...DEV_HEADERS,
+    ...(options?.headers as Record<string, string>),
+  };
+  // body가 있는 요청(POST/PUT/PATCH)에만 Content-Type 설정. GET에 불필요한 헤더 제거.
+  if (options?.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...options,
+      credentials: 'include', // Keycloak 쿠키(access_token) 자동 포함
+      headers,
+    });
+  } catch {
+    // 서버 다운 또는 네트워크 끊김
+    throw new Error('NETWORK_ERROR');
+  }
+
+  // 만료된 토큰으로 API 호출 시 백엔드가 401 반환 → 로그인 페이지로 강제 이동
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      window.location.href = `/login?from=${encodeURIComponent(window.location.pathname)}`;
+    }
+    return new Promise<never>(() => {});
+  }
+
+  // 인증은 됐지만 역할 권한 없음 (student → instructor 엔드포인트 등)
+  if (res.status === 403) {
+    throw new Error('FORBIDDEN');
+  }
+
+  // 존재하지 않는 리소스 (Lab ID, Session ID 등)
+  if (res.status === 404) {
+    throw new Error('NOT_FOUND');
+  }
+
+  // 500/502/503/504: 서버 측 문제 — 클라이언트 에러(4xx)와 구분해서 UI 처리
+  if (res.status >= 500) {
+    throw new Error('SERVER_ERROR');
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(body.error ?? 'Request failed');
   }
 
-  if (res.status === 204) return undefined as T; // DELETE 등 응답 바디 없는 경우
+  // 204 No Content: DELETE 등 응답 바디 없는 경우. T=void 호출 전용.
+  if (res.status === 204) return undefined as unknown as T;
   return res.json() as T;
 }
 
@@ -54,14 +89,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ step_id: stepId }),
       }),
-    hint: (id: string, stepId: number, level: number, history?: string) =>
-      request<{ hint_text: string; related_docs: string[]; hints_remaining: number }>(
-        `/api/v1/sessions/${id}/hint`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ step_id: stepId, hint_level: level, terminal_history: history }),
-        },
-      ),
   },
 
   auth: {
@@ -69,20 +96,7 @@ export const api = {
     logout: () => request<void>('/api/v1/auth/logout', { method: 'POST' }),
   },
 
-  leaderboard: {
-    get: () => request<Paginated<LeaderboardEntry>>('/api/v1/leaderboard'),
-  },
-
-  me: {
-    badges: () => request<Paginated<Badge>>('/api/v1/me/badges'),
-  },
-
   instructor: {
     sessions: () => request<Paginated<Session>>('/api/v1/instructor/sessions'),
-    inject: (sessionId: string, command: string) =>
-      request<void>(`/api/v1/instructor/sessions/${sessionId}/inject`, {
-        method: 'POST',
-        body: JSON.stringify({ command }),
-      }),
   },
 };

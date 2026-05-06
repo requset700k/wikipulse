@@ -1,5 +1,5 @@
 // 백엔드 API와 주고받는 도메인 타입 정의.
-// Go 백엔드의 domain/ 패키지 구조와 1:1 대응.
+// Go 백엔드 API 스펙 기반으로 작성. 백엔드 구현 시 OpenAPI 스펙과 대조 검증 필요.
 
 /** Lab 난이도 — 카탈로그 필터 및 카드 색상에 사용 */
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
@@ -58,21 +58,6 @@ export interface User {
   name: string;
   role: UserRole;
   points: number;
-}
-
-export interface Badge {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  earned_at: string;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  name: string;
-  points: number;
-  badges: number;
 }
 
 /** API 에러 응답 공통 포맷 */

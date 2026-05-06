@@ -8,6 +8,9 @@ import type { NextRequest } from 'next/server';
 // 인증 없이 접근 가능한 경로
 const PUBLIC_PATHS = ['/login', '/callback'];
 
+// Keycloak 미연동 환경에서 인증 게이트 비활성화. K8s에서 AUTH_ENABLED=true 주입 시 활성화.
+const authEnabled = process.env.AUTH_ENABLED === 'true';
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -16,10 +19,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // dev 모드에서는 인증 우회
-  if (process.env.NODE_ENV === 'development') {
-    return NextResponse.next();
-  }
+  if (!authEnabled) return NextResponse.next();
 
   // Keycloak 로그인 후 백엔드가 설정하는 HTTP-only 쿠키로 인증 확인
   const token = request.cookies.get('access_token');
