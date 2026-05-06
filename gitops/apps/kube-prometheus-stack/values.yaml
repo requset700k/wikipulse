@@ -109,7 +109,7 @@ grafana:
       auto_login: "false"
       client_id: grafana
       client_secret: "$__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
-      scopes: "openid profile email groups"
+      scopes: "openid profile email"
       auth_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/auth
       token_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/token
       api_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/userinfo
