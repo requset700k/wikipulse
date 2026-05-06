@@ -97,22 +97,24 @@ grafana:
   # ── Keycloak OIDC ──
   # client_secret 은 env var (GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET) 로 덮어쓴다.
   # Secret grafana-oidc(client-secret 키) 를 monitoring namespace 에 미리 생성해야 한다.
-  auth:
-    disable_login_form: false
-    generic_oauth:
-      enabled: true
+  grafana.ini:
+    auth:
+      disable_login_form: "false"
+    auth.generic_oauth:
+      enabled: "true"
       name: Keycloak
-      allow_sign_up: true
-      auto_login: false
+      allow_sign_up: "true"
+      auto_login: "false"
       client_id: grafana
-      client_secret: "" # envValueFrom 로 오버라이드
+      client_secret: "${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}"
       scopes: "openid profile email groups"
       auth_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/auth
       token_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/token
       api_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/userinfo
-      sign_out_redirect_url: https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/logout?client_id=grafana&post_logout_redirect_uri=https://grafana.cledyu.local/
+      sign_out_redirect_url: "https://keycloak.cledyu.local/realms/cledyu/protocol/openid-connect/logout?client_id=grafana&post_logout_redirect_uri=https://grafana.cledyu.local/"
       role_attribute_path: "contains(groups[*], 'team-observability') && 'Admin' || contains(groups[*], 'team-platform') && 'Admin' || 'Viewer'"
-      empty_scopes: false
+      empty_scopes: "false"
+      use_pkce: "true"
 
   envValueFrom:
     GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
