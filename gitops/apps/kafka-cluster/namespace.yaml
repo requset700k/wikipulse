@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    # Strimzi 0.39+는 KafkaNodePool과 Kafka CR에 명시적 securityContext를 설정하면
+    # PSA restricted를 지원한다.
+    # init-container UID 충돌 발생 시 baseline으로 내린다.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    # trust-manager Bundle "cledyu-root-ca-bundle" 이 본 namespace 에 root CA
+    # public cert ConfigMap 을 분배하도록 허용 (ca-secret-sync Job 이 mount).
+    cledyu.io/trust-bundle: root-ca

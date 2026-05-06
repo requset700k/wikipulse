@@ -1,0 +1,20 @@
+---
+# lab-events: lab_started, step_completed, hint_requested, validation_failed,
+#   lab_completed, lab_abandoned, vm_provisioned_source 이벤트.
+# 소비자: 분석 파이프라인(Airflow → BigQuery).
+# 파티션 키: user_id 해시 → 파티션 내 사용자별 순서 보장.
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: lab-events
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: cledyu-kafka
+spec:
+  partitions: 12
+  replicas: 3
+  config:
+    # 7일 보존 — 분석 파이프라인이 수 시간 내 소비하므로 충분하다.
+    retention.ms: "604800000"
+    min.insync.replicas: "2"
+    cleanup.policy: delete
