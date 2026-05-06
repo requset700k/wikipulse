@@ -13,7 +13,7 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              storage: 25Gi
 
     securityContext:
       runAsNonRoot: true
@@ -119,7 +119,7 @@ grafana:
 # ── node-exporter ─────────────────────────────────────────────
 prometheus-node-exporter:
   hostNetwork: false # 노드의 실제 IP 메트릭이나 호스트 레벨의 상세 네트워크 통계가 필요하게 된다면 true 변경 필요
-  hostPID: false
+  hostPID: true
 
   securityContext:
     runAsNonRoot: true
