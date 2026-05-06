@@ -55,8 +55,9 @@ jobs:
 
       - name: Install terraform-docs
         # terraform_docs 훅은 terraform-docs 바이너리 필요.
+        # 로컬 terraform-docs 버전과 반드시 일치시킬 것 (포맷 차이 방지).
         run: |
-          VERSION=v0.19.0
+          VERSION=v0.22.0
           sudo curl -sSLo /tmp/terraform-docs.tar.gz \
             "https://terraform-docs.io/dl/${VERSION}/terraform-docs-${VERSION}-linux-amd64.tar.gz"
           sudo tar -xzf /tmp/terraform-docs.tar.gz -C /usr/local/bin terraform-docs
