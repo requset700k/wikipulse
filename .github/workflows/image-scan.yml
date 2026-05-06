@@ -105,18 +105,19 @@ jobs:
             echo "path=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Trivy scan (table - for log visibility)
+      - name: Trivy scan (CI gate)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ctx.outputs.tag }}
           format: 'table'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
           vuln-type: 'os,library'
           trivyignores: ${{ steps.trivyignore.outputs.path }}
 
-      - name: Trivy scan (sarif - CI gate)
+      - name: Trivy scan (sarif upload)
+        if: always()
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ steps.ctx.outputs.tag }}
@@ -124,7 +125,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           vuln-type: 'os,library'
           trivyignores: ${{ steps.trivyignore.outputs.path }}
 
