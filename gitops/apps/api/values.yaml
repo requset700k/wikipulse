@@ -1,0 +1,25 @@
+image:
+  repository: ghcr.io/requset700k/api
+  tag: latest
+  pullPolicy: Always
+
+replicaCount: 1
+
+service:
+  port: 8080
+
+ingress:
+  host: api.cledyu.local
+  tlsSecret: api-tls
+
+env:
+  CLEDYU_SERVER_MODE: "release"
+  CLEDYU_REDIS_ADDR: "redis-master.redis.svc.cluster.local:6379"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

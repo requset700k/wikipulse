@@ -1,0 +1,24 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: api-tls
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: {{ .Values.ingress.tlsSecret }}
+  duration: "2160h"
+  renewBefore: "720h"
+  commonName: {{ .Values.ingress.host }}
+  dnsNames:
+    - {{ .Values.ingress.host }}
+  privateKey:
+    algorithm: RSA
+    size: 2048
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - digital signature
+    - key encipherment
+  issuerRef:
+    name: cledyu-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
