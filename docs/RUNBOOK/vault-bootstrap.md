@@ -145,6 +145,7 @@ standby: false
 - ArgoCD OIDC client secret 이관.
 - `web`, `api`, `tutor` OIDC client metadata 이관.
 - `grafana` OIDC client는 secret 미생성 상태라 pending metadata로 기록.
+- File audit device 활성화.
 
 ### 남음
 
@@ -171,6 +172,9 @@ Secrets engine:
 
 Auth backend:
 - kubernetes/
+
+Audit device:
+- file/                    /vault/audit/audit.log
 
 Policies:
 - cledyu-argocd
@@ -200,11 +204,54 @@ Migrated paths:
 ```bash
 vault secrets list
 vault auth list
+vault audit list
 vault policy list
 vault list auth/kubernetes/role
 vault kv metadata get cledyu/keycloak/admin
 vault kv metadata get cledyu/keycloak/postgres
 vault kv metadata get cledyu/oidc/argocd
+```
+
+## Audit Log 위치와 보존 정책
+
+Vault file audit device는 다음 위치에 기록함.
+
+```text
+Audit device: file/
+File path: /vault/audit/audit.log
+Storage: Vault auditStorage PVC
+Size: 5Gi
+```
+
+운영 확인 명령:
+
+```bash
+vault audit list
+vault token lookup
+tail -n 5 /vault/audit/audit.log
+```
+
+보존 정책:
+
+- 감사 로그는 Vault `auditStorage` PVC에 보존함.
+- `vault token lookup`, secret read/write, auth backend 호출 등 Vault API 요청이 HMAC 처리된 형태로 기록됨.
+- 원본 audit log에는 민감한 접근 패턴이 포함될 수 있으므로 GitHub, Discord, 공개 Notion에 원문 공유 금지.
+- 단일 파일 무한 append로 PVC가 가득 차면 Vault 요청 처리가 중단될 수 있으므로 운영 전 logrotate 또는 sidecar 기반 로테이션을 적용함.
+- 장기 보존은 Strimzi Kafka `security-logs` 토픽과 S3 Glacier 파이프라인이 준비된 뒤 연동함.
+- 장기 파이프라인 전까지는 `vault-0`의 `/vault/audit/audit.log`를 1차 포렌식 근거로 사용함.
+
+로테이션 예시:
+
+```text
+/vault/audit/audit.log {
+    rotate 7
+    daily
+    compress
+    missingok
+    postrotate
+        kill -HUP $(pidof vault)
+    endpostrotate
+}
 ```
 
 ## GCP KMS Auto-Unseal 전환

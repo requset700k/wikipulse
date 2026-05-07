@@ -109,6 +109,9 @@ if (-not $script:RootToken) {
   throw "root_token not found in bootstrap file."
 }
 
+Write-Host "Enable file audit device if needed..."
+Invoke-VaultCommand -Command "vault audit list | grep -q '^file/' || vault audit enable file file_path=/vault/audit/audit.log"
+
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $policyDir = Join-Path $repoRoot "infra\vault\policies"
 
