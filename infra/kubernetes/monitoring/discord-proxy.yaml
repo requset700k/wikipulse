@@ -29,6 +29,8 @@ spec:
                 secretKeyRef:
                   name: alertmanager-discord-webhook
                   key: webhook-url
+            - name: DISCORD_USERNAME
+              value: "Alertmanager"
           ports:
             - containerPort: 9094
           securityContext:
