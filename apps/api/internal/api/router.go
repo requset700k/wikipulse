@@ -36,9 +36,9 @@ func NewRouter(cfg *config.Config, log *zap.Logger) *gin.Engine {
 	v1 := r.Group("/api/v1")
 	v1.Use(middleware.JWT())
 	{
-		v1.GET("/me", h.GetMe)          // 현재 로그인 사용자 정보 (mock)
-		v1.GET("/labs", h.ListLabs)     // Lab 목록 (mock)
-		v1.GET("/labs/:id", h.GetLab)   // Lab 단건 조회 (mock)
+		v1.GET("/me", h.GetMe)        // 현재 로그인 사용자 정보 (mock)
+		v1.GET("/labs", h.ListLabs)   // Lab 목록 (mock)
+		v1.GET("/labs/:id", h.GetLab) // Lab 단건 조회 (mock)
 	}
 
 	return r
