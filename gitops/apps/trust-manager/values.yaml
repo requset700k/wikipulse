@@ -27,20 +27,4 @@ resources:
 podDisruptionBudget:
   enabled: false   # replicaCount=1 이라 PDB 의미 없음
 
-# PSS restricted 호환 (chart default 가 이미 잘 설정돼있지만 명시)
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 1001
-  seccompProfile:
-    type: RuntimeDefault
-containerSecurityContext:
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
-  readOnlyRootFilesystem: true
-
-# Approver 는 cert-manager 가 발급한 cert 의 CSR 에 자동 approve.
-# 우리 use case (Bundle CR 만 사용) 에선 미필요 — 비활성으로 리소스 절약.
-approver:
-  enabled: false
+# PSS restricted 호환은 v0.22.0 chart default 로 충족됨.
