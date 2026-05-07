@@ -112,6 +112,9 @@ if (-not $script:RootToken) {
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $policyDir = Join-Path $repoRoot "infra\vault\policies"
 
+Write-Host "Enable file audit device if needed..."
+Invoke-VaultCommand -Command "vault audit list | grep -q '^file/' || vault audit enable file file_path=/vault/audit/audit.log >/dev/null"
+
 Write-Host "Enable KV v2 mount if needed..."
 Invoke-VaultCommand -Command "vault secrets enable -path=cledyu kv-v2 >/dev/null 2>&1 || true"
 
