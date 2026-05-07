@@ -67,7 +67,7 @@ jobs:
           cache-dependency-path: ${{ matrix.module }}/go.sum
       - uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.62
+          version: v1.64
           working-directory: ${{ matrix.module }}
           args: --timeout=5m
 
